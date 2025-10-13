@@ -1,0 +1,293 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(STUDENT)
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student      Student?
+  adminProfile AdminProfile?
+  schoolAdmin  SchoolAdmin?
+
+  @@map("users")
+}
+
+model School {
+  id          String      @id @default(cuid())
+  name        String
+  code        String      @unique
+  address     String
+  district    String
+  province    String
+  latitude    Float?
+  longitude   Float?
+  phone       String?
+  email       String?
+  principal   String?
+  established DateTime?
+  type        SchoolType  @default(PUBLIC)
+  level       SchoolLevel @default(PRIMARY)
+  status      String      @default("ACTIVE")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  students     Student[]
+  teachers     Teacher[]
+  schoolAdmins SchoolAdmin[]
+  results      Result[]
+  subjects     Subject[]
+  blockchainRecords BlockchainRecord[]
+
+  @@map("schools")
+}
+
+model Student {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  studentId    String    @unique
+  firstName    String
+  lastName     String
+  dateOfBirth  DateTime
+  gender       Gender
+  address      String
+  phone        String?
+  guardianName String
+  guardianPhone String
+  currentSchoolId String?
+  enrollmentDate DateTime @default(now())
+  status       String   @default("ACTIVE")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentSchool School?  @relation(fields: [currentSchoolId], references: [id])
+  results      Result[]
+  attendances  Attendance[]
+  enrollments  Enrollment[]
+
+  @@map("students")
+}
+
+model Teacher {
+  id          String   @id @default(cuid())
+  teacherId   String   @unique
+  firstName   String
+  lastName    String
+  email       String   @unique
+  phone       String
+  schoolId    String
+  subjects    String[] // Array of subject IDs they teach
+  dateJoined  DateTime @default(now())
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  school      School   @relation(fields: [schoolId], references: [id])
+  results     Result[]
+
+  @@map("teachers")
+}
+
+model Subject {
+  id        String   @id @default(cuid())
+  name      String
+  code      String
+  schoolId  String
+  level     String   // Primary, Secondary, etc.
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  school    School   @relation(fields: [schoolId], references: [id])
+  results   Result[]
+
+  @@unique([code, schoolId])
+  @@map("subjects")
+}
+
+model Result {
+  id         String   @id @default(cuid())
+  studentId  String
+  schoolId   String
+  subjectId  String
+  teacherId  String
+  term       String   // Term 1, Term 2, Term 3
+  year       Int
+  score      Float
+  grade      String
+  remarks    String?
+  examType   String   // Continuous Assessment, Mid-term, Final, etc.
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  student    Student  @relation(fields: [studentId], references: [id])
+  school     School   @relation(fields: [schoolId], references: [id])
+  subject    Subject  @relation(fields: [subjectId], references: [id])
+  teacher    Teacher  @relation(fields: [teacherId], references: [id])
+
+  @@unique([studentId, subjectId, term, year, examType])
+  @@map("results")
+}
+
+model Enrollment {
+  id         String   @id @default(cuid())
+  studentId  String
+  schoolId   String
+  startDate  DateTime
+  endDate    DateTime?
+  class      String
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  student    Student  @relation(fields: [studentId], references: [id])
+
+  @@map("enrollments")
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  date      DateTime
+  status    AttendanceStatus @default(PRESENT)
+  remarks   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  student   Student  @relation(fields: [studentId], references: [id])
+
+  @@unique([studentId, date])
+  @@map("attendances")
+}
+
+model AdminProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  level     AdminLevel @default(DISTRICT)
+  district  String?
+  province  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("admin_profiles")
+}
+
+model SchoolAdmin {
+  id        String   @id @default(cuid())
+  userId    String
+  schoolId  String
+  role      String   @default("ADMIN")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  school    School   @relation(fields: [schoolId], references: [id])
+
+  @@unique([userId, schoolId])
+  @@map("school_admins")
+}
+
+model BlockchainRecord {
+  id            String   @id @default(cuid())
+  schoolId      String
+  studentId     String?
+  recordType    String   // "RESULT", "ENROLLMENT", "CERTIFICATE"
+  dataHash      String   // Hash of the data stored on blockchain
+  transactionHash String @unique
+  blockNumber   Int
+  contractAddress String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  school        School   @relation(fields: [schoolId], references: [id])
+
+  @@map("blockchain_records")
+}
+
+model APILog {
+  id         String   @id @default(cuid())
+  endpoint   String
+  method     String
+  requestData Json?
+  responseData Json?
+  statusCode Int
+  schoolId   String?
+  userId     String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@map("api_logs")
+}
+
+// Enums
+enum UserRole {
+  STUDENT
+  TEACHER
+  SCHOOL_ADMIN
+  DISTRICT_ADMIN
+  NATIONAL_ADMIN
+  SUPER_ADMIN
+}
+
+enum SchoolType {
+  PUBLIC
+  PRIVATE
+  MISSION
+  COMMUNITY
+}
+
+enum SchoolLevel {
+  PRE_PRIMARY
+  PRIMARY
+  JUNIOR_SECONDARY
+  SENIOR_SECONDARY
+  TECHNICAL
+  UNIVERSITY
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum AdminLevel {
+  SCHOOL
+  DISTRICT
+  PROVINCE
+  NATIONAL
+}
