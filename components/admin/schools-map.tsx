@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { School, Users, Award } from 'lucide-react'
 
 // Dynamically import map components to avoid SSR issues
@@ -61,6 +61,8 @@ const mockSchools = [
 export function SchoolsMap() {
   const [isClient, setIsClient] = useState(false)
   const [customIcon, setCustomIcon] = useState<any>(null)
+  // Ensure a unique key per mount to avoid Leaflet re-init on the same DOM node during StrictMode/HMR
+  const mapKeyRef = useRef<string>(`sl-map-${Date.now()}-${Math.random().toString(36).slice(2)}`)
 
   useEffect(() => {
     setIsClient(true)
@@ -97,7 +99,7 @@ export function SchoolsMap() {
   return (
     <div className="h-96 w-full rounded-lg overflow-hidden">
       <MapContainer 
-        key="sierra-leone-map"
+        key={mapKeyRef.current}
         center={position} 
         zoom={8} 
         scrollWheelZoom={true}
