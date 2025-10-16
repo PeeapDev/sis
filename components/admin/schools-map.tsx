@@ -3,12 +3,25 @@
 import dynamic from 'next/dynamic'
 import { useState, useEffect, useRef } from 'react'
 import { School, Users, Award } from 'lucide-react'
+// useMap is safe to import in a client component
+import { useMap } from 'react-leaflet'
 
 // Dynamically import map components to avoid SSR issues
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false })
 const TileLayer = dynamic(() => import('react-leaflet').then(mod => mod.TileLayer), { ssr: false })
 const Marker = dynamic(() => import('react-leaflet').then(mod => mod.Marker), { ssr: false })
 const Popup = dynamic(() => import('react-leaflet').then(mod => mod.Popup), { ssr: false })
+
+// Remove Leaflet map on unmount to prevent reusing the same container across HMR/StrictMode remounts
+function MapCleanup() {
+  const map = useMap()
+  useEffect(() => {
+    return () => {
+      try { map.remove() } catch (_) { /* ignore */ }
+    }
+  }, [map])
+  return null
+}
 
 // Mock data for Sierra Leone schools
 const mockSchools = [
@@ -107,6 +120,7 @@ export function SchoolsMap() {
         maxBoundsViscosity={1.0}
         className="h-full w-full"
       >
+        <MapCleanup />
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
