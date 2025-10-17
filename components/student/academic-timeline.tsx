@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users } from 'lucide-react'
+import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
 
 type StageType = 'start' | 'continuation' | 'transfer' | 'jss' | 'sss'
 
@@ -217,85 +217,151 @@ const mockAcademicHistory: AcademicStage[] = [
 
 export function AcademicTimeline() {
   const [selectedStage, setSelectedStage] = useState<AcademicStage | null>(null)
+  const [zoom, setZoom] = useState(1)
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2))
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5))
+  const handleResetZoom = () => setZoom(1)
 
   return (
-    <div className="space-y-8">
-      {/* Legend */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Timeline Legend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {Object.entries(stageColors).map(([key, value]) => (
-              <div key={key} className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded ${value.bg}`}></div>
-                <span className="text-sm font-medium">{value.label}</span>
+    <div className="space-y-6">
+      {/* Controls Bar */}
+      <div className="flex items-center justify-between">
+        {/* Legend */}
+        <div className="flex flex-wrap items-center gap-4">
+          {Object.entries(stageColors).map(([key, value]) => (
+            <div key={key} className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${value.bg}`}></div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{value.label}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Zoom Controls */}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5}>
+            <ZoomOut className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium min-w-[60px] text-center">{Math.round(zoom * 100)}%</span>
+          <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoom >= 2}>
+            <ZoomIn className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleResetZoom}>
+            <Maximize2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Timeline Tree Container */}
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="overflow-auto max-h-[800px] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+            <div 
+              className="relative py-12 px-8 min-h-[600px]"
+              style={{ 
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top center',
+                transition: 'transform 0.3s ease'
+              }}
+            >
+              {/* Vertical Trunk Line */}
+              <div className="absolute left-1/2 top-0 bottom-0 w-2 bg-gradient-to-b from-gray-400 to-gray-600 dark:from-gray-600 dark:to-gray-400 transform -translate-x-1/2 rounded-full shadow-lg"></div>
+
+              {/* Timeline Stages */}
+              <div className="relative space-y-8">
+                {mockAcademicHistory.map((stage, index) => {
+                  const color = stageColors[stage.type]
+                  const prevStage = index > 0 ? mockAcademicHistory[index - 1] : null
+                  const isTransfer = stage.type === 'transfer'
+                  const isNewLevel = prevStage && stage.level !== prevStage.level
+
+                  return (
+                    <motion.div
+                      key={stage.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.4, delay: index * 0.05 }}
+                      className="relative"
+                    >
+                      {/* Branch Line */}
+                      <div className="absolute left-1/2 top-1/2 transform -translate-y-1/2 -translate-x-1/2 z-0">
+                        <div className={`${color.bg} h-1 w-32 rounded-full shadow-md`}></div>
+                      </div>
+
+                      {/* Stage Card */}
+                      <div className="relative flex items-center justify-center">
+                        <motion.button
+                          whileHover={{ scale: 1.08, y: -4 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setSelectedStage(stage)}
+                          className={`relative z-10 ${color.border} border-4 rounded-xl p-4 min-w-[280px] shadow-xl 
+                            bg-white dark:bg-gray-800 hover:shadow-2xl transition-all duration-300 group`}
+                        >
+                          {/* Transfer Badge */}
+                          {isTransfer && (
+                            <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                              TRANSFER
+                            </div>
+                          )}
+
+                          {/* New Level Badge */}
+                          {isNewLevel && !isTransfer && (
+                            <div className={`absolute -top-3 -right-3 ${color.bg} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
+                              NEW LEVEL
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            {/* Grade */}
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                                {stage.grade}
+                              </h3>
+                              <div className={`w-4 h-4 rounded-full ${color.bg}`}></div>
+                            </div>
+
+                            {/* School Name */}
+                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                              {stage.schoolName}
+                            </p>
+
+                            {/* Year and Score */}
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {stage.year}
+                              </span>
+                              {stage.averageScore && (
+                                <span className={`text-sm font-bold ${color.text}`}>
+                                  {stage.averageScore}%
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Hover Effect */}
+                          <div className={`absolute inset-0 ${color.bg} opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-300`}></div>
+                        </motion.button>
+                      </div>
+
+                      {/* Connecting Line to Next Stage */}
+                      {index < mockAcademicHistory.length - 1 && (
+                        <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full h-8 w-2 bg-gradient-to-b from-gray-400 to-transparent dark:from-gray-600 rounded-b-full"></div>
+                      )}
+                    </motion.div>
+                  )
+                })}
               </div>
-            ))}
+
+              {/* Tree Root */}
+              <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-800 rounded-full shadow-2xl flex items-center justify-center">
+                  <span className="text-white font-bold text-xs">START</span>
+                </div>
+              </div>
+            </div>
           </div>
         </CardContent>
       </Card>
-
-      {/* Timeline Tree */}
-      <div className="relative">
-        {/* Vertical Center Line */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-1 bg-gray-800 dark:bg-gray-200 transform -translate-x-1/2 z-0"></div>
-
-        {/* Timeline Stages */}
-        <div className="space-y-0">
-          {mockAcademicHistory.map((stage, index) => {
-            const color = stageColors[stage.type]
-            const isLeft = index % 2 === 0
-
-            return (
-              <motion.div
-                key={stage.id}
-                initial={{ opacity: 0, x: isLeft ? -50 : 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
-                className="relative"
-              >
-                {/* Stage Node */}
-                <div className={`flex items-center ${isLeft ? 'justify-end pr-8' : 'justify-start pl-8'}`}>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedStage(stage)}
-                    className={`relative z-10 group ${isLeft ? 'text-right' : 'text-left'}`}
-                  >
-                    {/* Horizontal Bar */}
-                    <div className={`flex items-center gap-4 ${isLeft ? 'flex-row-reverse' : 'flex-row'}`}>
-                      <div className={`${color.bg} h-3 transition-all duration-300 group-hover:h-4 rounded-full ${
-                        isLeft ? 'w-48 md:w-64' : 'w-48 md:w-64'
-                      }`}></div>
-                      
-                      {/* Label */}
-                      <div className={`${isLeft ? 'text-right' : 'text-left'} min-w-[120px]`}>
-                        <p className="font-bold text-gray-900 dark:text-white">{stage.grade}</p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">{stage.year}</p>
-                        {stage.averageScore && (
-                          <p className={`text-xs font-semibold ${color.text}`}>
-                            Avg: {stage.averageScore}%
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Center Node Circle */}
-                    <div className={`absolute top-1/2 ${isLeft ? 'right-0' : 'left-0'} transform -translate-y-1/2 ${
-                      isLeft ? 'translate-x-1/2' : '-translate-x-1/2'
-                    }`}>
-                      <div className={`w-6 h-6 rounded-full ${color.bg} border-4 border-white dark:border-gray-900 
-                        group-hover:w-8 group-hover:h-8 transition-all duration-300 shadow-lg`}></div>
-                    </div>
-                  </motion.button>
-                </div>
-              </motion.div>
-            )
-          })}
-        </div>
-      </div>
 
       {/* Detail Modal */}
       <AnimatePresence>
