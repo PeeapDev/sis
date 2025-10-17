@@ -52,6 +52,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
     { name: 'Subjects', href: '/student/subjects', icon: BookOpen },
     { name: 'Attendance', href: '/student/attendance', icon: Calendar },
     { name: 'Certificates', href: '/student/certificates', icon: Shield },
+    { name: 'Blockchain', href: '/student/blockchain', icon: Shield },
     { name: 'Transcripts', href: '/student/transcripts', icon: FileText },
     { name: 'Profile', href: '/student/profile', icon: User },
     { name: 'Settings', href: '/student/settings', icon: Settings },

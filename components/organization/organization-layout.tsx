@@ -16,7 +16,8 @@ import {
   User,
   LogOut,
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -41,6 +42,8 @@ export function OrganizationLayout({ children }: OrganizationLayoutProps) {
     { name: 'Reports', href: '/organization/reports', icon: FileText, current: false },
     { name: 'Data Export', href: '/organization/export', icon: Download, current: false },
     { name: 'Collaborations', href: '/organization/collaborations', icon: Users, current: false },
+    { name: 'Certificates', href: '/organization/certificates', icon: Shield, current: false },
+    { name: 'Blockchain', href: '/organization/blockchain', icon: Shield, current: false },
     { name: 'Settings', href: '/organization/settings', icon: Settings, current: false },
   ]
 
