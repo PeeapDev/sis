@@ -217,21 +217,32 @@ const mockAcademicHistory: AcademicStage[] = [
 
 export function AcademicTimeline() {
   const [selectedStage, setSelectedStage] = useState<AcademicStage | null>(null)
-  const [zoom, setZoom] = useState(1)
+  const [zoom, setZoom] = useState(0.8)
 
-  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.2, 2))
-  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.2, 0.5))
-  const handleResetZoom = () => setZoom(1)
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1.5))
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.4))
+  const handleResetZoom = () => setZoom(0.8)
+
+  // Group stages by level for flowchart layout
+  const groupedStages = mockAcademicHistory.reduce((acc, stage) => {
+    if (!acc[stage.level]) {
+      acc[stage.level] = []
+    }
+    acc[stage.level].push(stage)
+    return acc
+  }, {} as Record<string, AcademicStage[]>)
+
+  const levels = Object.keys(groupedStages)
 
   return (
     <div className="space-y-6">
       {/* Controls Bar */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         {/* Legend */}
         <div className="flex flex-wrap items-center gap-4">
           {Object.entries(stageColors).map(([key, value]) => (
             <div key={key} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${value.bg}`}></div>
+              <div className={`w-3 h-3 rounded ${value.bg}`}></div>
               <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{value.label}</span>
             </div>
           ))}
@@ -239,11 +250,11 @@ export function AcademicTimeline() {
 
         {/* Zoom Controls */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.5}>
+          <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.4}>
             <ZoomOut className="h-4 w-4" />
           </Button>
           <span className="text-sm font-medium min-w-[60px] text-center">{Math.round(zoom * 100)}%</span>
-          <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoom >= 2}>
+          <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoom >= 1.5}>
             <ZoomIn className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" onClick={handleResetZoom}>
@@ -252,110 +263,144 @@ export function AcademicTimeline() {
         </div>
       </div>
 
-      {/* Timeline Tree Container */}
-      <Card className="overflow-hidden">
+      {/* Flowchart Container */}
+      <Card className="overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         <CardContent className="p-0">
-          <div className="overflow-auto max-h-[800px] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+          <div className="overflow-auto">
             <div 
-              className="relative py-12 px-8 min-h-[600px]"
+              className="relative p-8 min-h-[600px]"
               style={{ 
                 transform: `scale(${zoom})`,
-                transformOrigin: 'top center',
-                transition: 'transform 0.3s ease'
+                transformOrigin: 'top left',
+                transition: 'transform 0.3s ease',
+                minWidth: 'max-content'
               }}
             >
-              {/* Vertical Trunk Line */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-2 bg-gradient-to-b from-gray-400 to-gray-600 dark:from-gray-600 dark:to-gray-400 transform -translate-x-1/2 rounded-full shadow-lg"></div>
-
-              {/* Timeline Stages */}
-              <div className="relative space-y-8">
-                {mockAcademicHistory.map((stage, index) => {
-                  const color = stageColors[stage.type]
-                  const prevStage = index > 0 ? mockAcademicHistory[index - 1] : null
-                  const isTransfer = stage.type === 'transfer'
-                  const isNewLevel = prevStage && stage.level !== prevStage.level
-
+              {/* Flowchart Levels */}
+              <div className="flex gap-16 items-start">
+                {levels.map((level, levelIndex) => {
+                  const stages = groupedStages[level]
+                  const levelColor = stageColors[stages[0].type]
+                  
                   return (
-                    <motion.div
-                      key={stage.id}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.4, delay: index * 0.05 }}
-                      className="relative"
-                    >
-                      {/* Branch Line */}
-                      <div className="absolute left-1/2 top-1/2 transform -translate-y-1/2 -translate-x-1/2 z-0">
-                        <div className={`${color.bg} h-1 w-32 rounded-full shadow-md`}></div>
+                    <div key={level} className="relative">
+                      {/* Level Container */}
+                      <div className={`${levelColor.border} border-2 rounded-2xl p-6 bg-gray-800/50 dark:bg-gray-900/50 backdrop-blur-sm min-w-[280px]`}>
+                        {/* Level Header */}
+                        <div className="mb-6 pb-3 border-b border-gray-700">
+                          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${levelColor.bg}`}></div>
+                            {level}
+                          </h3>
+                        </div>
+
+                        {/* Stages in this level */}
+                        <div className="space-y-4">
+                          {stages.map((stage, stageIndex) => {
+                            const color = stageColors[stage.type]
+                            const isTransfer = stage.type === 'transfer'
+
+                            return (
+                              <motion.div
+                                key={stage.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ duration: 0.4, delay: (levelIndex * 0.2) + (stageIndex * 0.1) }}
+                              >
+                                <motion.button
+                                  whileHover={{ scale: 1.05, y: -2 }}
+                                  whileTap={{ scale: 0.98 }}
+                                  onClick={() => setSelectedStage(stage)}
+                                  className={`relative w-full ${color.border} border-2 rounded-lg p-4 
+                                    bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900
+                                    hover:shadow-xl transition-all duration-300 group text-left`}
+                                >
+                                  {/* Transfer Badge */}
+                                  {isTransfer && (
+                                    <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
+                                      TRANSFER
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-2">
+                                    {/* Grade */}
+                                    <div className="flex items-center justify-between">
+                                      <h4 className="font-bold text-white text-sm">
+                                        {stage.grade}
+                                      </h4>
+                                      <div className={`w-2 h-2 rounded-full ${color.bg}`}></div>
+                                    </div>
+
+                                    {/* School Name */}
+                                    <p className="text-xs text-gray-300 truncate">
+                                      {stage.schoolName}
+                                    </p>
+
+                                    {/* Year and Score */}
+                                    <div className="flex items-center justify-between pt-2 border-t border-gray-600">
+                                      <span className="text-[10px] text-gray-400">
+                                        {stage.year}
+                                      </span>
+                                      {stage.averageScore && (
+                                        <span className={`text-xs font-bold ${color.text}`}>
+                                          {stage.averageScore}%
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  {/* Hover Glow */}
+                                  <div className={`absolute inset-0 ${color.bg} opacity-0 group-hover:opacity-20 rounded-lg transition-opacity duration-300`}></div>
+                                </motion.button>
+
+                                {/* Connector to next stage in same level */}
+                                {stageIndex < stages.length - 1 && (
+                                  <div className="flex justify-center my-2">
+                                    <div className={`w-0.5 h-4 ${color.bg} rounded-full`}></div>
+                                  </div>
+                                )}
+                              </motion.div>
+                            )
+                          })}
+                        </div>
                       </div>
 
-                      {/* Stage Card */}
-                      <div className="relative flex items-center justify-center">
-                        <motion.button
-                          whileHover={{ scale: 1.08, y: -4 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => setSelectedStage(stage)}
-                          className={`relative z-10 ${color.border} border-4 rounded-xl p-4 min-w-[280px] shadow-xl 
-                            bg-white dark:bg-gray-800 hover:shadow-2xl transition-all duration-300 group`}
-                        >
-                          {/* Transfer Badge */}
-                          {isTransfer && (
-                            <div className="absolute -top-3 -right-3 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                              TRANSFER
-                            </div>
-                          )}
-
-                          {/* New Level Badge */}
-                          {isNewLevel && !isTransfer && (
-                            <div className={`absolute -top-3 -right-3 ${color.bg} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
-                              NEW LEVEL
-                            </div>
-                          )}
-
-                          <div className="space-y-2">
-                            {/* Grade */}
-                            <div className="flex items-center justify-between">
-                              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                                {stage.grade}
-                              </h3>
-                              <div className={`w-4 h-4 rounded-full ${color.bg}`}></div>
-                            </div>
-
-                            {/* School Name */}
-                            <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                              {stage.schoolName}
-                            </p>
-
-                            {/* Year and Score */}
-                            <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {stage.year}
-                              </span>
-                              {stage.averageScore && (
-                                <span className={`text-sm font-bold ${color.text}`}>
-                                  {stage.averageScore}%
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Hover Effect */}
-                          <div className={`absolute inset-0 ${color.bg} opacity-0 group-hover:opacity-10 rounded-xl transition-opacity duration-300`}></div>
-                        </motion.button>
-                      </div>
-
-                      {/* Connecting Line to Next Stage */}
-                      {index < mockAcademicHistory.length - 1 && (
-                        <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2 translate-y-full h-8 w-2 bg-gradient-to-b from-gray-400 to-transparent dark:from-gray-600 rounded-b-full"></div>
+                      {/* Arrow to next level */}
+                      {levelIndex < levels.length - 1 && (
+                        <div className="absolute top-1/2 -right-8 transform -translate-y-1/2 z-20">
+                          <svg width="32" height="32" viewBox="0 0 32 32" className="text-gray-500">
+                            <path
+                              d="M4 16 L24 16 M24 16 L18 10 M24 16 L18 22"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
                       )}
-                    </motion.div>
+                    </div>
                   )
                 })}
               </div>
 
-              {/* Tree Root */}
-              <div className="absolute left-1/2 bottom-0 transform -translate-x-1/2">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-800 rounded-full shadow-2xl flex items-center justify-center">
-                  <span className="text-white font-bold text-xs">START</span>
+              {/* Start Node */}
+              <div className="absolute -left-20 top-1/2 transform -translate-y-1/2">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-700 rounded-full shadow-2xl flex items-center justify-center border-4 border-green-400">
+                  <span className="text-white font-bold text-[10px]">START</span>
+                </div>
+                <div className="absolute top-1/2 -right-4 transform -translate-y-1/2">
+                  <svg width="24" height="24" viewBox="0 0 24 24" className="text-green-500">
+                    <path
+                      d="M4 12 L18 12 M18 12 L13 7 M18 12 L13 17"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
                 </div>
               </div>
             </div>
