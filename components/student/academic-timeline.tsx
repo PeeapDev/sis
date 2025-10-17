@@ -22,6 +22,8 @@ interface AcademicStage {
   achievements?: string[]
   teachers?: string[]
   transferReason?: string
+  isCompleted: boolean // Track if stage is achieved
+  isCurrent?: boolean // Track current stage
 }
 
 const stageColors: Record<StageType, { bg: string; border: string; text: string; label: string }> = {
@@ -57,7 +59,34 @@ const stageColors: Record<StageType, { bg: string; border: string; text: string;
   }
 }
 
-// Mock data - replace with real student data
+// Complete academic path from Nursery to College (all stages)
+const completeAcademicPath: AcademicStage[] = [
+  // Nursery
+  { id: 'n1', level: 'Nursery', grade: 'Nursery 1', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  { id: 'n2', level: 'Nursery', grade: 'Nursery 2', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  // Primary
+  { id: 'p1', level: 'Primary', grade: 'Primary 1', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  { id: 'p2', level: 'Primary', grade: 'Primary 2', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  { id: 'p3', level: 'Primary', grade: 'Primary 3', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  { id: 'p4', level: 'Primary', grade: 'Primary 4', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  { id: 'p5', level: 'Primary', grade: 'Primary 5', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  { id: 'p6', level: 'Primary', grade: 'Primary 6', schoolName: 'TBD', type: 'start', year: 'TBD', term: '', isCompleted: false },
+  // JSS
+  { id: 'j1', level: 'JSS', grade: 'JSS 1', schoolName: 'TBD', type: 'jss', year: 'TBD', term: '', isCompleted: false },
+  { id: 'j2', level: 'JSS', grade: 'JSS 2', schoolName: 'TBD', type: 'jss', year: 'TBD', term: '', isCompleted: false },
+  { id: 'j3', level: 'JSS', grade: 'JSS 3', schoolName: 'TBD', type: 'jss', year: 'TBD', term: '', isCompleted: false },
+  // SSS
+  { id: 's1', level: 'SSS', grade: 'SSS 1', schoolName: 'TBD', type: 'sss', year: 'TBD', term: '', isCompleted: false },
+  { id: 's2', level: 'SSS', grade: 'SSS 2', schoolName: 'TBD', type: 'sss', year: 'TBD', term: '', isCompleted: false },
+  { id: 's3', level: 'SSS', grade: 'SSS 3', schoolName: 'TBD', type: 'sss', year: 'TBD', term: '', isCompleted: false },
+  // College/University
+  { id: 'c1', level: 'College', grade: 'Year 1', schoolName: 'TBD', type: 'continuation', year: 'TBD', term: '', isCompleted: false },
+  { id: 'c2', level: 'College', grade: 'Year 2', schoolName: 'TBD', type: 'continuation', year: 'TBD', term: '', isCompleted: false },
+  { id: 'c3', level: 'College', grade: 'Year 3', schoolName: 'TBD', type: 'continuation', year: 'TBD', term: '', isCompleted: false },
+  { id: 'c4', level: 'College', grade: 'Year 4', schoolName: 'TBD', type: 'continuation', year: 'TBD', term: '', isCompleted: false },
+]
+
+// Mock data - student's actual progress (replace with real data)
 const mockAcademicHistory: AcademicStage[] = [
   {
     id: '1',
@@ -74,7 +103,8 @@ const mockAcademicHistory: AcademicStage[] = [
       { name: 'Science', score: 85, grade: 'A' }
     ],
     attendance: 95,
-    achievements: ['Best Student Award', 'Perfect Attendance']
+    achievements: ['Best Student Award', 'Perfect Attendance'],
+    isCompleted: true
   },
   {
     id: '2',
@@ -85,7 +115,8 @@ const mockAcademicHistory: AcademicStage[] = [
     year: '2016',
     term: 'Term 1-3',
     averageScore: 87,
-    attendance: 98
+    attendance: 98,
+    isCompleted: true
   },
   {
     id: '3',
@@ -96,7 +127,8 @@ const mockAcademicHistory: AcademicStage[] = [
     year: '2017',
     term: 'Term 1-3',
     averageScore: 89,
-    attendance: 96
+    attendance: 96,
+    isCompleted: true
   },
   {
     id: '4',
@@ -107,7 +139,8 @@ const mockAcademicHistory: AcademicStage[] = [
     year: '2018',
     term: 'Term 1-3',
     averageScore: 90,
-    attendance: 97
+    attendance: 97,
+    isCompleted: true
   },
   {
     id: '5',
@@ -118,7 +151,8 @@ const mockAcademicHistory: AcademicStage[] = [
     year: '2019',
     term: 'Term 1-3',
     averageScore: 88,
-    attendance: 94
+    attendance: 94,
+    isCompleted: true
   },
   {
     id: '6',
@@ -135,7 +169,8 @@ const mockAcademicHistory: AcademicStage[] = [
       { name: 'Science', score: 91, grade: 'A' }
     ],
     attendance: 99,
-    achievements: ['Valedictorian', 'Mathematics Excellence Award']
+    achievements: ['Valedictorian', 'Mathematics Excellence Award'],
+    isCompleted: true
   },
   {
     id: '7',
@@ -146,7 +181,8 @@ const mockAcademicHistory: AcademicStage[] = [
     year: '2021',
     term: 'Term 1-3',
     averageScore: 86,
-    attendance: 96
+    attendance: 96,
+    isCompleted: true
   },
   {
     id: '8',
@@ -158,7 +194,8 @@ const mockAcademicHistory: AcademicStage[] = [
     term: 'Term 1-3',
     averageScore: 84,
     transferReason: 'Family relocation to Makeni',
-    attendance: 93
+    attendance: 93,
+    isCompleted: true
   },
   {
     id: '9',
@@ -176,7 +213,8 @@ const mockAcademicHistory: AcademicStage[] = [
       { name: 'Social Studies', score: 86, grade: 'A' }
     ],
     attendance: 95,
-    achievements: ['BECE Qualifier']
+    achievements: ['BECE Qualifier'],
+    isCompleted: true
   },
   {
     id: '10',
@@ -187,7 +225,8 @@ const mockAcademicHistory: AcademicStage[] = [
     year: '2024',
     term: 'Term 1-3',
     averageScore: 88,
-    attendance: 97
+    attendance: 97,
+    isCompleted: true
   },
   {
     id: '11',
@@ -198,7 +237,8 @@ const mockAcademicHistory: AcademicStage[] = [
     year: '2025',
     term: 'Term 1-2',
     averageScore: 89,
-    attendance: 98
+    attendance: 98,
+    isCompleted: true
   },
   {
     id: '12',
@@ -211,7 +251,9 @@ const mockAcademicHistory: AcademicStage[] = [
     averageScore: 90,
     transferReason: 'Scholarship opportunity',
     attendance: 100,
-    achievements: ['Merit Scholarship Recipient']
+    achievements: ['Merit Scholarship Recipient'],
+    isCompleted: false,
+    isCurrent: true
   }
 ]
 
@@ -277,8 +319,16 @@ export function AcademicTimeline() {
     setIsPanning(false)
   }
 
+  // Merge complete path with actual progress
+  const mergedHistory = completeAcademicPath.map(pathStage => {
+    const completedStage = mockAcademicHistory.find(
+      s => s.level === pathStage.level && s.grade === pathStage.grade
+    )
+    return completedStage || pathStage
+  })
+
   // Group stages by level for flowchart layout
-  const groupedStages = mockAcademicHistory.reduce((acc, stage) => {
+  const groupedStages = mergedHistory.reduce((acc, stage) => {
     if (!acc[stage.level]) {
       acc[stage.level] = []
     }
@@ -392,6 +442,8 @@ export function AcademicTimeline() {
                           {stages.map((stage, stageIndex) => {
                             const color = stageColors[stage.type]
                             const isTransfer = stage.type === 'transfer'
+                            const isInactive = !stage.isCompleted && !stage.isCurrent
+                            const isCurrent = stage.isCurrent
 
                             return (
                               <motion.div
@@ -401,40 +453,52 @@ export function AcademicTimeline() {
                                 transition={{ duration: 0.4, delay: (levelIndex * 0.2) + (stageIndex * 0.1) }}
                               >
                                 <motion.button
-                                  whileHover={{ scale: 1.05, y: -2 }}
-                                  whileTap={{ scale: 0.98 }}
-                                  onClick={() => setSelectedStage(stage)}
-                                  className={`relative w-full ${color.border} border-2 rounded-lg p-4 
-                                    bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900
-                                    hover:shadow-xl transition-all duration-300 group text-left`}
+                                  whileHover={{ scale: isInactive ? 1 : 1.05, y: isInactive ? 0 : -2 }}
+                                  whileTap={{ scale: isInactive ? 1 : 0.98 }}
+                                  onClick={() => !isInactive && setSelectedStage(stage)}
+                                  disabled={isInactive}
+                                  className={`relative w-full border-2 rounded-lg p-4 transition-all duration-300 group text-left
+                                    ${isInactive 
+                                      ? 'border-gray-600 bg-gradient-to-br from-gray-800 to-gray-900 opacity-40 cursor-not-allowed' 
+                                      : isCurrent
+                                        ? `${color.border} bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900 hover:shadow-xl animate-pulse`
+                                        : `${color.border} bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900 hover:shadow-xl`
+                                    }`}
                                 >
                                   {/* Transfer Badge */}
-                                  {isTransfer && (
+                                  {isTransfer && !isInactive && (
                                     <div className="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10">
                                       TRANSFER
+                                    </div>
+                                  )}
+
+                                  {/* Current Badge */}
+                                  {isCurrent && (
+                                    <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg z-10 animate-pulse">
+                                      CURRENT
                                     </div>
                                   )}
 
                                   <div className="space-y-2">
                                     {/* Grade */}
                                     <div className="flex items-center justify-between">
-                                      <h4 className="font-bold text-white text-sm">
+                                      <h4 className={`font-bold text-sm ${isInactive ? 'text-gray-500' : 'text-white'}`}>
                                         {stage.grade}
                                       </h4>
-                                      <div className={`w-2 h-2 rounded-full ${color.bg}`}></div>
+                                      <div className={`w-2 h-2 rounded-full ${isInactive ? 'bg-gray-600' : color.bg}`}></div>
                                     </div>
 
                                     {/* School Name */}
-                                    <p className="text-xs text-gray-300 truncate">
-                                      {stage.schoolName}
+                                    <p className={`text-xs truncate ${isInactive ? 'text-gray-600' : 'text-gray-300'}`}>
+                                      {isInactive ? 'Not Started' : stage.schoolName}
                                     </p>
 
                                     {/* Year and Score */}
                                     <div className="flex items-center justify-between pt-2 border-t border-gray-600">
-                                      <span className="text-[10px] text-gray-400">
-                                        {stage.year}
+                                      <span className={`text-[10px] ${isInactive ? 'text-gray-600' : 'text-gray-400'}`}>
+                                        {isInactive ? 'TBD' : stage.year}
                                       </span>
-                                      {stage.averageScore && (
+                                      {stage.averageScore && !isInactive && (
                                         <span className={`text-xs font-bold ${color.text}`}>
                                           {stage.averageScore}%
                                         </span>
@@ -443,7 +507,9 @@ export function AcademicTimeline() {
                                   </div>
 
                                   {/* Hover Glow */}
-                                  <div className={`absolute inset-0 ${color.bg} opacity-0 group-hover:opacity-20 rounded-lg transition-opacity duration-300`}></div>
+                                  {!isInactive && (
+                                    <div className={`absolute inset-0 ${color.bg} opacity-0 group-hover:opacity-20 rounded-lg transition-opacity duration-300`}></div>
+                                  )}
                                 </motion.button>
 
                                 {/* Connector to next stage in same level */}
