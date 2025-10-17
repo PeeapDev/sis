@@ -230,16 +230,25 @@ export function AcademicTimeline() {
     setPanOffset({ x: 0, y: 0 })
   }
 
-  // Mouse wheel zoom
+  // Mouse wheel zoom and scroll prevention
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
     const handleWheel = (e: WheelEvent) => {
+      // Always prevent default scroll behavior when inside canvas
+      e.preventDefault()
+      
       if (e.ctrlKey || e.metaKey) {
-        e.preventDefault()
+        // Zoom with Ctrl/Cmd + Scroll
         const delta = e.deltaY * -0.001
         setZoom(prev => Math.min(Math.max(prev + delta, 0.4), 1.5))
+      } else {
+        // Pan horizontally with normal scroll
+        setPanOffset(prev => ({
+          x: prev.x - e.deltaX - e.deltaY,
+          y: prev.y
+        }))
       }
     }
 
@@ -335,7 +344,7 @@ export function AcademicTimeline() {
           <div className="absolute bottom-4 left-4 z-30 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-xl border border-gray-700">
             <div className="flex items-center gap-2 text-xs text-gray-300">
               <Move className="h-3 w-3" />
-              <span>Click & drag to pan • Ctrl+Scroll to zoom</span>
+              <span>Drag to pan • Scroll to move • Ctrl+Scroll to zoom</span>
             </div>
           </div>
 
@@ -440,7 +449,35 @@ export function AcademicTimeline() {
                                 {/* Connector to next stage in same level */}
                                 {stageIndex < stages.length - 1 && (
                                   <div className="flex justify-center my-2">
-                                    <div className={`w-0.5 h-4 ${color.bg} rounded-full`}></div>
+                                    <div className={`w-0.5 h-6 ${color.bg} rounded-full shadow-md`}></div>
+                                  </div>
+                                )}
+
+                                {/* Transfer connector to next level */}
+                                {stageIndex === stages.length - 1 && levelIndex < levels.length - 1 && (
+                                  <div className="absolute -right-12 top-1/2 transform -translate-y-1/2 z-10">
+                                    <svg width="48" height="48" viewBox="0 0 48 48" className={stage.type === 'transfer' ? 'text-red-500' : 'text-gray-500'}>
+                                      <defs>
+                                        <marker
+                                          id={`arrowhead-${stage.id}`}
+                                          markerWidth="10"
+                                          markerHeight="10"
+                                          refX="9"
+                                          refY="3"
+                                          orient="auto"
+                                        >
+                                          <polygon points="0 0, 10 3, 0 6" fill="currentColor" />
+                                        </marker>
+                                      </defs>
+                                      <path
+                                        d="M 8 24 L 40 24"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        fill="none"
+                                        strokeDasharray={stage.type === 'transfer' ? '4 4' : 'none'}
+                                        markerEnd={`url(#arrowhead-${stage.id})`}
+                                      />
+                                    </svg>
                                   </div>
                                 )}
                               </motion.div>
