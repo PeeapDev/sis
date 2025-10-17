@@ -74,7 +74,13 @@ export default function StudentDashboard() {
 
   return (
     <StudentLayout>
-      <div className="space-y-8">
+      <motion.div 
+        className="space-y-8 h-full"
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        style={{ paddingTop: 0 }}
+      >
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -231,7 +237,7 @@ export default function StudentDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </motion.div>
     </StudentLayout>
   )
 }
