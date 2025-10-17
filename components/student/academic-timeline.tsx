@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2 } from 'lucide-react'
+import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2, Move } from 'lucide-react'
 
 type StageType = 'start' | 'continuation' | 'transfer' | 'jss' | 'sss'
 
@@ -218,10 +218,55 @@ const mockAcademicHistory: AcademicStage[] = [
 export function AcademicTimeline() {
   const [selectedStage, setSelectedStage] = useState<AcademicStage | null>(null)
   const [zoom, setZoom] = useState(0.8)
+  const [isPanning, setIsPanning] = useState(false)
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
+  const [startPan, setStartPan] = useState({ x: 0, y: 0 })
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1.5))
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.4))
-  const handleResetZoom = () => setZoom(0.8)
+  const handleResetZoom = () => {
+    setZoom(0.8)
+    setPanOffset({ x: 0, y: 0 })
+  }
+
+  // Mouse wheel zoom
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+
+    const handleWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault()
+        const delta = e.deltaY * -0.001
+        setZoom(prev => Math.min(Math.max(prev + delta, 0.4), 1.5))
+      }
+    }
+
+    container.addEventListener('wheel', handleWheel, { passive: false })
+    return () => container.removeEventListener('wheel', handleWheel)
+  }, [])
+
+  // Panning handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (e.button === 0) { // Left mouse button
+      setIsPanning(true)
+      setStartPan({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y })
+    }
+  }
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isPanning) {
+      setPanOffset({
+        x: e.clientX - startPan.x,
+        y: e.clientY - startPan.y
+      })
+    }
+  }
+
+  const handleMouseUp = () => {
+    setIsPanning(false)
+  }
 
   // Group stages by level for flowchart layout
   const groupedStages = mockAcademicHistory.reduce((acc, stage) => {
@@ -236,43 +281,82 @@ export function AcademicTimeline() {
 
   return (
     <div className="space-y-6">
-      {/* Controls Bar */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-4">
-          {Object.entries(stageColors).map(([key, value]) => (
-            <div key={key} className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded ${value.bg}`}></div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{value.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Zoom Controls */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={zoom <= 0.4}>
-            <ZoomOut className="h-4 w-4" />
-          </Button>
-          <span className="text-sm font-medium min-w-[60px] text-center">{Math.round(zoom * 100)}%</span>
-          <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoom >= 1.5}>
-            <ZoomIn className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleResetZoom}>
-            <Maximize2 className="h-4 w-4" />
-          </Button>
-        </div>
+      {/* Legend */}
+      <div className="flex flex-wrap items-center gap-4">
+        {Object.entries(stageColors).map(([key, value]) => (
+          <div key={key} className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded ${value.bg}`}></div>
+            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{value.label}</span>
+          </div>
+        ))}
       </div>
 
       {/* Flowchart Container */}
-      <Card className="overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <Card className="overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative">
         <CardContent className="p-0">
-          <div className="overflow-auto">
+          {/* Floating Zoom Controls */}
+          <div className="absolute top-4 right-4 z-30 flex flex-col gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg p-2 shadow-xl border border-gray-700">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleZoomIn} 
+              disabled={zoom >= 1.5}
+              className="h-8 w-8 p-0 text-white hover:bg-gray-700"
+              title="Zoom In"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <div className="text-xs font-bold text-center text-white px-1">
+              {Math.round(zoom * 100)}%
+            </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleZoomOut} 
+              disabled={zoom <= 0.4}
+              className="h-8 w-8 p-0 text-white hover:bg-gray-700"
+              title="Zoom Out"
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <div className="border-t border-gray-700 my-1"></div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleResetZoom}
+              className="h-8 w-8 p-0 text-white hover:bg-gray-700"
+              title="Reset View"
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Pan Hint */}
+          <div className="absolute bottom-4 left-4 z-30 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-xl border border-gray-700">
+            <div className="flex items-center gap-2 text-xs text-gray-300">
+              <Move className="h-3 w-3" />
+              <span>Click & drag to pan • Ctrl+Scroll to zoom</span>
+            </div>
+          </div>
+
+          <div 
+            ref={containerRef}
+            className="overflow-hidden relative"
+            style={{ 
+              cursor: isPanning ? 'grabbing' : 'grab',
+              height: '600px'
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          >
             <div 
               className="relative p-8 min-h-[600px]"
               style={{ 
-                transform: `scale(${zoom})`,
+                transform: `translate(${panOffset.x}px, ${panOffset.y}px) scale(${zoom})`,
                 transformOrigin: 'top left',
-                transition: 'transform 0.3s ease',
+                transition: isPanning ? 'none' : 'transform 0.3s ease',
                 minWidth: 'max-content'
               }}
             >
