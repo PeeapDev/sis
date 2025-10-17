@@ -1,0 +1,1 @@
+export default function Page() { return (<div className="p-6"><h1 className="text-2xl font-semibold">Organization • Certificates</h1><p className="text-sm text-muted-foreground mt-2">Certificates and verification.</p></div>) }

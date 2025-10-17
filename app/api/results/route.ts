@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { blockchainService } from '@/lib/blockchain'
+import { prisma } from '@/lib/prisma'
 
 // Mock data for demonstration
 const mockResults = [
@@ -219,6 +221,45 @@ export async function POST(request: NextRequest) {
 
     // In a real app, this would be saved to the database
     mockResults.push(newResult)
+
+    // Optionally store on blockchain
+    if (body.storeOnChain === true) {
+      const bcResult = await blockchainService.storeEducationRecord({
+        studentId: body.studentId,
+        schoolId: body.schoolId,
+        recordType: 'RESULT',
+        recordData: {
+          studentId: body.studentId,
+          schoolId: body.schoolId,
+          subjectId: body.subjectId,
+          term: body.term,
+          year: body.year,
+          score: body.score,
+          grade: getGrade(body.score),
+          examType: body.examType
+        }
+      })
+
+      if (bcResult.success) {
+        try {
+          await prisma.blockchainRecord.create({
+            data: {
+              schoolId: body.schoolId,
+              studentId: body.studentId,
+              recordType: 'RESULT',
+              dataHash: bcResult.dataHash as string,
+              transactionHash: bcResult.transactionHash as string,
+              blockNumber: Number(bcResult.blockNumber),
+              contractAddress: process.env.SMART_CONTRACT_ADDRESS as string
+            }
+          })
+        } catch (e) {
+          console.error('Failed to persist blockchain record:', e)
+        }
+      } else {
+        console.warn('Blockchain store failed:', bcResult.error)
+      }
+    }
 
     return NextResponse.json({
       success: true,

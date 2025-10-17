@@ -56,6 +56,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Maps', href: '/admin/maps', icon: MapPin },
     { name: 'GIS / Maps', href: '/admin/gis', icon: Globe },
     { name: 'Search', href: '/admin/search', icon: Search },
+    { name: 'Certificates', href: '/admin/certificates', icon: Shield },
     { name: 'Blockchain', href: '/admin/blockchain', icon: Shield },
     { name: 'API', href: '/admin/api', icon: Database },
     { name: 'Settings', href: '/admin/settings', icon: Settings },

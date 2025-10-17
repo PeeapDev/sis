@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { blockchainService } from '@/lib/blockchain'
+import { prisma } from '@/lib/prisma'
 
 export async function POST(request: NextRequest) {
   try {
@@ -40,20 +41,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // In a real application, you would also store the blockchain record reference in your database
-    // For now, we'll simulate this
-    const blockchainRecord = {
-      id: `bc_${Date.now()}`,
-      studentId: body.studentId,
-      schoolId: body.schoolId,
-      recordType: body.recordType,
-      dataHash: blockchainService.generateCertificateHash(body.recordData),
-      transactionHash: result.transactionHash,
-      blockNumber: result.blockNumber,
-      contractAddress: process.env.SMART_CONTRACT_ADDRESS,
-      createdAt: new Date().toISOString(),
-      status: 'CONFIRMED'
-    }
+    // Persist blockchain reference in database
+    const blockchainRecord = await prisma.blockchainRecord.create({
+      data: {
+        schoolId: body.schoolId,
+        studentId: body.studentId,
+        recordType: body.recordType,
+        dataHash: result.dataHash as string,
+        transactionHash: result.transactionHash as string,
+        blockNumber: Number(result.blockNumber),
+        contractAddress: process.env.SMART_CONTRACT_ADDRESS as string
+      }
+    })
 
     return NextResponse.json({
       success: true,

@@ -1,0 +1,1 @@
+export default function Page(){return(<div className="p-6"><h1 className="text-2xl font-semibold">Organization • Data Export</h1><p className="text-sm text-muted-foreground mt-2">Export datasets and reports.</p></div>)}

@@ -119,6 +119,20 @@ npm run dev
 
 The application will be available at `http://localhost:3000`
 
+## ⚙️ Blockchain Configuration Notes
+
+- Set the following environment variables in `.env.local`:
+  - `WEB3_PROVIDER_URL` (e.g., Polygon/Ethereum HTTPS RPC)
+  - `BLOCKCHAIN_PRIVATE_KEY` (signing key of the deployer/operator account)
+  - `SMART_CONTRACT_ADDRESS` (deployed EducationRecords contract address)
+
+- You can check readiness at `GET /api/blockchain/status`, which now reports:
+  - `providerConfigured`, `accountConfigured`, `contractConfigured`, and `missingConfig` list
+  - `connected`, `networkId`, `currentBlock`, and `contractAddress`
+  - DB-backed statistics: `totalRecordsStored`, `totalStudentsWithRecords`, `totalSchoolsConnected`, `lastRecordStored`
+
+- Records can be queried via `GET /api/blockchain/records` with filters and pagination.
+
 ## 🔐 Demo Accounts
 
 For testing purposes, use these demo accounts:
@@ -154,12 +168,13 @@ The system uses a comprehensive database schema including:
 
 ### Results API
 - `GET /api/results` - Get academic results
-- `POST /api/results` - Record new results
+- `POST /api/results` - Record new results. Optional: include `storeOnChain: true` to also write a hash of the result to the blockchain and save a `BlockchainRecord` reference.
 
 ### Blockchain API
-- `POST /api/blockchain/store` - Store record on blockchain
+- `POST /api/blockchain/store` - Store record on blockchain and persist reference
 - `POST /api/blockchain/verify` - Verify blockchain record
-- `GET /api/blockchain/status` - Check blockchain status
+- `GET /api/blockchain/status` - Check blockchain status and configuration
+- `GET /api/blockchain/records` - List blockchain records (filters: `studentId`, `schoolId`, `recordType`; pagination: `limit`, `offset`; sort: `createdAt:desc|asc` or `blockNumber:desc|asc`)
 
 ## 🌍 Sierra Leone Context
 
