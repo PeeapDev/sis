@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { 
   User, 
@@ -64,11 +65,16 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex">
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+      <motion.div 
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0 lg:static lg:inset-0`}
+        initial={{ x: -256 }}
+        animate={{ x: 0 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+      >
         
         {/* Sidebar Header */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 dark:border-gray-700">
@@ -134,13 +140,35 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             Logout
           </Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Main Content */}
-      <div className="lg:ml-64">
-        {/* Top Bar */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between h-16 px-6">
+      <motion.div
+        className="flex-1 lg:ml-0"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+        style={{
+          width: 'calc(100vw - 16rem)',
+          height: '100vh',
+          position: 'relative',
+          paddingTop: 0
+        }}
+      >
+        {/* Page Content */}
+        <motion.main 
+          className="px-4 py-0 h-full overflow-y-auto"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+          style={{
+            paddingTop: 0,
+            height: '100vh'
+          }}
+        >
+          {/* Floating controls for mobile and theme */}
+          <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
@@ -149,18 +177,10 @@ export function StudentLayout({ children }: StudentLayoutProps) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            
-            <div className="flex items-center space-x-4">
-              <ThemeToggle />
-            </div>
           </div>
-        </header>
-
-        {/* Page Content */}
-        <main className="p-6">
           {children}
-        </main>
-      </div>
+        </motion.main>
+      </motion.div>
 
       {/* Sidebar Overlay */}
       {sidebarOpen && (
