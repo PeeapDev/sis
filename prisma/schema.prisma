@@ -23,7 +23,7 @@ model User {
   // Relations
   student      Student?
   adminProfile AdminProfile?
-  schoolAdmin  SchoolAdmin?
+  schoolAdmins SchoolAdmin[]
 
   @@map("users")
 }

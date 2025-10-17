@@ -83,6 +83,9 @@ export default function LoginPage() {
         name: account.name,
       }))
       
+      // Set role in cookies for middleware access
+      document.cookie = `role=${account.role}; path=/; max-age=86400`; // 24 hours
+      
       toast({
         title: 'Login Successful',
         description: `Welcome ${account.name}!`,
@@ -115,12 +118,17 @@ export default function LoginPage() {
           name: account.name,
         }))
         
+        // Set role in cookies for middleware access
+        document.cookie = `role=${account.role}; path=/; max-age=86400`; // 24 hours
+        
         toast({
           title: 'Login Successful',
           description: `Welcome to Sierra Leone SIS!`,
         })
         
-        router.push(account.redirect)
+        // Force a full page reload to ensure middleware runs with new cookie
+        window.location.href = account.redirect;
+        return;
       } else {
         toast({
           title: 'Login Failed',
