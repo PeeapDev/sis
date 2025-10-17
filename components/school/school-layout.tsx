@@ -16,7 +16,8 @@ import {
   X,
   BarChart3,
   UserPlus,
-  Upload
+  Upload,
+  Shield
 } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
@@ -58,6 +59,8 @@ export function SchoolLayout({ children }: SchoolLayoutProps) {
     { name: 'Analytics', href: '/school/analytics', icon: BarChart3 },
     { name: 'Enrollment', href: '/school/enrollment', icon: UserPlus },
     { name: 'Data Upload', href: '/school/upload', icon: Upload },
+    { name: 'Certificates', href: '/school/certificates', icon: Shield },
+    { name: 'Blockchain', href: '/school/blockchain', icon: Shield },
     { name: 'Settings', href: '/school/settings', icon: Settings },
   ]
 

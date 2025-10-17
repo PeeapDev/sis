@@ -50,18 +50,21 @@ const EDUCATION_RECORD_ABI = [
 export class BlockchainService {
   private web3: Web3
   private contract: any
-  private account: string
+  private account?: string
+  private contractAddress?: string
 
   constructor() {
     // Initialize Web3 with provider (Polygon/Ethereum)
-    const providerUrl = process.env.WEB3_PROVIDER_URL || 'https://polygon-mainnet.g.alchemy.com/v2/your-api-key'
-    this.web3 = new Web3(new Web3.providers.HttpProvider(providerUrl))
-    
-    // Initialize contract
-    const contractAddress = process.env.SMART_CONTRACT_ADDRESS || '0x...'
-    this.contract = new this.web3.eth.Contract(EDUCATION_RECORD_ABI, contractAddress)
-    
-    // Set account from private key
+    const providerUrl = process.env.WEB3_PROVIDER_URL
+    this.web3 = new Web3(new Web3.providers.HttpProvider(providerUrl || ''))
+
+    // Initialize contract if address is provided and looks valid
+    this.contractAddress = process.env.SMART_CONTRACT_ADDRESS
+    if (this.contractAddress && this.contractAddress.startsWith('0x') && this.contractAddress.length >= 10) {
+      this.contract = new this.web3.eth.Contract(EDUCATION_RECORD_ABI, this.contractAddress)
+    }
+
+    // Set account from private key if provided
     const privateKey = process.env.BLOCKCHAIN_PRIVATE_KEY
     if (privateKey) {
       const account = this.web3.eth.accounts.privateKeyToAccount(privateKey)
@@ -82,9 +85,21 @@ export class BlockchainService {
     success: boolean
     transactionHash?: string
     blockNumber?: number
+    dataHash?: string
     error?: string
   }> {
     try {
+      // Validate configuration
+      if (!this.contract) {
+        return { success: false, error: 'Blockchain contract not configured. Set SMART_CONTRACT_ADDRESS.' }
+      }
+      if (!this.account) {
+        return { success: false, error: 'Blockchain account not configured. Set BLOCKCHAIN_PRIVATE_KEY.' }
+      }
+      if (!('currentProvider' in (this.web3 as any)) && !process.env.WEB3_PROVIDER_URL) {
+        return { success: false, error: 'WEB3 provider not configured. Set WEB3_PROVIDER_URL.' }
+      }
+
       // Create hash of the record data
       const dataHash = this.web3.utils.keccak256(JSON.stringify(data.recordData))
       const timestamp = Math.floor(Date.now() / 1000)
@@ -106,7 +121,8 @@ export class BlockchainService {
       return {
         success: true,
         transactionHash: transaction.transactionHash,
-        blockNumber: transaction.blockNumber
+        blockNumber: transaction.blockNumber,
+        dataHash
       }
     } catch (error) {
       console.error('Blockchain storage error:', error)
@@ -234,16 +250,29 @@ export class BlockchainService {
     connected: boolean
     networkId?: number
     blockNumber?: number
+    contractAddress?: string
+    hasAccount?: boolean
     error?: string
   }> {
     try {
+      if (!process.env.WEB3_PROVIDER_URL) {
+        return {
+          connected: false,
+          contractAddress: this.contractAddress,
+          hasAccount: Boolean(this.account),
+          error: 'WEB3_PROVIDER_URL not set'
+        }
+      }
+
       const networkId = await this.web3.eth.net.getId()
       const blockNumber = await this.web3.eth.getBlockNumber()
 
       return {
         connected: true,
         networkId: Number(networkId),
-        blockNumber: Number(blockNumber)
+        blockNumber: Number(blockNumber),
+        contractAddress: this.contractAddress,
+        hasAccount: Boolean(this.account)
       }
     } catch (error) {
       console.error('Blockchain connection error:', error)
