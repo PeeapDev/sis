@@ -278,12 +278,23 @@ export function AcademicTimeline() {
     if (!container) return
 
     const handleWheel = (e: WheelEvent) => {
-      // Always prevent default scroll behavior when inside canvas
+      // Check if mouse is over the container
+      const rect = container.getBoundingClientRect()
+      const isOverContainer = 
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom
+
+      if (!isOverContainer) return
+
+      // Stop event from bubbling to parent elements and prevent browser zoom
+      e.stopPropagation()
+      e.stopImmediatePropagation()
       e.preventDefault()
       
       if (e.ctrlKey || e.metaKey) {
         // Figma-style zoom: zoom towards cursor position
-        const rect = container.getBoundingClientRect()
         const mouseX = e.clientX - rect.left
         const mouseY = e.clientY - rect.top
         
@@ -308,8 +319,9 @@ export function AcademicTimeline() {
       }
     }
 
-    container.addEventListener('wheel', handleWheel, { passive: false })
-    return () => container.removeEventListener('wheel', handleWheel)
+    // Add to document to catch it early
+    document.addEventListener('wheel', handleWheel, { passive: false, capture: true })
+    return () => document.removeEventListener('wheel', handleWheel, { capture: true } as any)
   }, [zoom])
 
   // Panning handlers
@@ -437,10 +449,11 @@ export function AcademicTimeline() {
 
           <div 
             ref={containerRef}
-            className="overflow-hidden relative"
+            className="overflow-hidden relative isolate"
             style={{ 
               cursor: isPanning ? 'grabbing' : 'grab',
-              height: '600px'
+              height: '600px',
+              contain: 'layout style paint'
             }}
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
