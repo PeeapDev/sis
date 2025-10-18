@@ -25,8 +25,19 @@ export function ShareHistoryDialog({ open, onOpenChange, academicHistory }: Shar
   const [expiryDate, setExpiryDate] = useState<Date | null>(null)
   const [selectedStages, setSelectedStages] = useState<string[]>([])
   const [copied, setCopied] = useState(false)
+  const [shareCount, setShareCount] = useState(0) // Track number of shares
+  const maxShares = 3
 
   const generatePin = () => {
+    if (shareCount >= maxShares) {
+      toast({
+        title: "Share Limit Reached",
+        description: `You can only generate ${maxShares} share PINs.`,
+        variant: "destructive"
+      })
+      return
+    }
+
     // Generate 7-digit PIN
     const pin = Math.floor(1000000 + Math.random() * 9000000).toString()
     const expiry = new Date()
@@ -34,8 +45,20 @@ export function ShareHistoryDialog({ open, onOpenChange, academicHistory }: Shar
     
     setGeneratedPin(pin)
     setExpiryDate(expiry)
+    setShareCount(prev => prev + 1)
     
     // TODO: Save to database with expiry date and selected stages
+    // Save PIN to localStorage for demo purposes
+    const savedPins = JSON.parse(localStorage.getItem('sharedPins') || '[]')
+    savedPins.push({
+      pin,
+      expiryDate: expiry.toISOString(),
+      selectedStages: selectedStages,
+      studentName: 'John Doe', // TODO: Get from actual user data
+      createdAt: new Date().toISOString()
+    })
+    localStorage.setItem('sharedPins', JSON.stringify(savedPins))
+    
     toast({
       title: "Success",
       description: "Share PIN generated successfully!",
@@ -71,12 +94,17 @@ export function ShareHistoryDialog({ open, onOpenChange, academicHistory }: Shar
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Share2 className="h-5 w-5" />
-            Share Academic History
+          <DialogTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Share2 className="h-5 w-5" />
+              Share Academic History
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {shareCount}/{maxShares} shares used
+            </Badge>
           </DialogTitle>
           <DialogDescription>
             Generate a secure PIN to share your academic history with others
@@ -185,10 +213,10 @@ export function ShareHistoryDialog({ open, onOpenChange, academicHistory }: Shar
             <Button 
               onClick={generatePin} 
               className="w-full"
-              disabled={selectedStages.length === 0}
+              disabled={selectedStages.length === 0 || shareCount >= maxShares}
             >
               <Lock className="h-4 w-4 mr-2" />
-              Generate Share PIN
+              {shareCount >= maxShares ? 'Share Limit Reached' : 'Generate Share PIN'}
             </Button>
           )}
 
@@ -252,8 +280,9 @@ export function ShareHistoryDialog({ open, onOpenChange, academicHistory }: Shar
                     setSelectedStages([])
                   }}
                   className="w-full"
+                  disabled={shareCount >= maxShares}
                 >
-                  Generate New PIN
+                  {shareCount >= maxShares ? 'Maximum Shares Reached' : 'Generate New PIN'}
                 </Button>
               </motion.div>
             )}

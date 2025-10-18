@@ -22,50 +22,85 @@ import {
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/theme-toggle'
 
-// Mock function to validate PIN and get shared history
-// TODO: Replace with actual API call
+// Mock academic history data
+const mockAcademicHistory = [
+  {
+    id: '1',
+    grade: 'Primary 1',
+    schoolName: 'Freetown Primary School',
+    schoolId: 'fps-001',
+    schoolGrade: 'A',
+    year: '2015',
+    averageScore: 85
+  },
+  {
+    id: '2',
+    grade: 'Primary 2',
+    schoolName: 'Freetown Primary School',
+    schoolId: 'fps-001',
+    schoolGrade: 'A',
+    year: '2016',
+    averageScore: 87
+  },
+  {
+    id: '3',
+    grade: 'Primary 3',
+    schoolName: 'Freetown Primary School',
+    schoolId: 'fps-001',
+    schoolGrade: 'A',
+    year: '2017',
+    averageScore: 89
+  },
+  {
+    id: '6',
+    grade: 'Primary 6',
+    schoolName: 'Freetown Primary School',
+    schoolId: 'fps-001',
+    schoolGrade: 'A',
+    year: '2020',
+    averageScore: 91
+  },
+  {
+    id: '7',
+    grade: 'JSS 1',
+    schoolName: 'Bo Government Secondary School',
+    schoolId: 'bgss-002',
+    schoolGrade: 'B',
+    year: '2021',
+    averageScore: 86
+  }
+]
+
+// Function to validate PIN and get shared history
 const validatePIN = async (pin: string) => {
   // Simulate API call
   await new Promise(resolve => setTimeout(resolve, 1000))
   
-  // Mock validation - in production, this would check database
-  if (pin === '1234567') {
+  // Check localStorage for saved PINs
+  const savedPins = JSON.parse(localStorage.getItem('sharedPins') || '[]')
+  const pinData = savedPins.find((p: any) => p.pin === pin)
+  
+  if (pinData) {
+    const expiryDate = new Date(pinData.expiryDate)
+    const now = new Date()
+    
+    // Check if PIN has expired
+    if (expiryDate < now) {
+      return { valid: false, expired: true }
+    }
+    
+    // Get shared stages
+    const sharedStageIds = pinData.selectedStages || []
+    const sharedStages = mockAcademicHistory.map(stage => ({
+      ...stage,
+      isShared: sharedStageIds.includes(stage.id)
+    }))
+    
     return {
       valid: true,
-      studentName: 'John Doe',
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      sharedStages: [
-        {
-          id: '1',
-          grade: 'Primary 1',
-          schoolName: 'Freetown Primary School',
-          schoolId: 'fps-001',
-          schoolGrade: 'A',
-          year: '2015',
-          averageScore: 85,
-          isShared: true
-        },
-        {
-          id: '2',
-          grade: 'Primary 2',
-          schoolName: 'Freetown Primary School',
-          schoolId: 'fps-001',
-          schoolGrade: 'A',
-          year: '2016',
-          averageScore: 87,
-          isShared: true
-        },
-        {
-          id: '3',
-          grade: 'Primary 3',
-          schoolName: 'Freetown Primary School',
-          schoolId: 'fps-001',
-          schoolGrade: 'A',
-          year: '2017',
-          averageScore: 89,
-          isShared: false // Not shared - will show padlock
-        }
-      ]
+      studentName: pinData.studentName || 'John Doe',
+      expiresAt: expiryDate,
+      sharedStages
     }
   }
   

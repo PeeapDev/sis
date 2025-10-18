@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2, Move, ExternalLink, School, Share2 } from 'lucide-react'
+import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2, Move, ExternalLink, School, Share2, Unlock } from 'lucide-react'
 import Link from 'next/link'
 import { ShareHistoryDialog } from './share-history-dialog'
 
@@ -287,11 +287,27 @@ const mockAcademicHistory: AcademicStage[] = [
 export function AcademicTimeline() {
   const [selectedStage, setSelectedStage] = useState<AcademicStage | null>(null)
   const [shareDialogOpen, setShareDialogOpen] = useState(false)
+  const [activePins, setActivePins] = useState<any[]>([])
   const [zoom, setZoom] = useState(0.8)
   const [isPanning, setIsPanning] = useState(false)
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
   const [startPan, setStartPan] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Load active PINs from localStorage
+  useEffect(() => {
+    const loadActivePins = () => {
+      const savedPins = JSON.parse(localStorage.getItem('sharedPins') || '[]')
+      const now = new Date()
+      const active = savedPins.filter((p: any) => new Date(p.expiryDate) > now)
+      setActivePins(active)
+    }
+    
+    loadActivePins()
+    // Refresh every minute
+    const interval = setInterval(loadActivePins, 60000)
+    return () => clearInterval(interval)
+  }, [shareDialogOpen])
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 1.5))
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.4))
@@ -417,8 +433,8 @@ export function AcademicTimeline() {
 
   return (
     <div className="space-y-6">
-      {/* Share Button */}
-      <div className="flex items-center justify-between">
+      {/* Share Button and Active PINs */}
+      <div className="flex items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-4">
           {Object.entries(stageColors).map(([key, value]) => (
             <div key={key} className="flex items-center gap-2">
@@ -427,13 +443,38 @@ export function AcademicTimeline() {
             </div>
           ))}
         </div>
-        <Button 
-          onClick={() => setShareDialogOpen(true)}
-          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-        >
-          <Share2 className="h-4 w-4 mr-2" />
-          Share History
-        </Button>
+        
+        <div className="flex items-center gap-3">
+          {/* Active PINs Display */}
+          {activePins.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {activePins.map((pinData, idx) => (
+                <div 
+                  key={idx}
+                  className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/20 border border-green-500 rounded-lg"
+                >
+                  <Unlock className="h-4 w-4 text-green-600" />
+                  <div className="flex flex-col">
+                    <span className="text-sm font-mono font-bold text-green-700 dark:text-green-400">
+                      {pinData.pin}
+                    </span>
+                    <span className="text-[10px] text-green-600 dark:text-green-500">
+                      Expires: {new Date(pinData.expiryDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          
+          <Button 
+            onClick={() => setShareDialogOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+          >
+            <Share2 className="h-4 w-4 mr-2" />
+            Share History
+          </Button>
+        </div>
       </div>
 
       {/* Flowchart Container */}
