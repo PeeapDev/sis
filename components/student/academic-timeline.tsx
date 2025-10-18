@@ -272,7 +272,7 @@ export function AcademicTimeline() {
     setPanOffset({ x: 0, y: 0 })
   }
 
-  // Mouse wheel zoom and scroll prevention
+  // Figma-style mouse wheel zoom and scroll
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
@@ -282,9 +282,23 @@ export function AcademicTimeline() {
       e.preventDefault()
       
       if (e.ctrlKey || e.metaKey) {
-        // Zoom with Ctrl/Cmd + Scroll
+        // Figma-style zoom: zoom towards cursor position
+        const rect = container.getBoundingClientRect()
+        const mouseX = e.clientX - rect.left
+        const mouseY = e.clientY - rect.top
+        
+        // Calculate zoom delta
         const delta = e.deltaY * -0.001
-        setZoom(prev => Math.min(Math.max(prev + delta, 0.4), 1.5))
+        const newZoom = Math.min(Math.max(zoom + delta, 0.4), 1.5)
+        const zoomRatio = newZoom / zoom
+        
+        // Adjust pan to zoom towards cursor
+        setPanOffset(prev => ({
+          x: mouseX - (mouseX - prev.x) * zoomRatio,
+          y: mouseY - (mouseY - prev.y) * zoomRatio
+        }))
+        
+        setZoom(newZoom)
       } else {
         // Pan horizontally with normal scroll
         setPanOffset(prev => ({
@@ -296,7 +310,7 @@ export function AcademicTimeline() {
 
     container.addEventListener('wheel', handleWheel, { passive: false })
     return () => container.removeEventListener('wheel', handleWheel)
-  }, [])
+  }, [zoom])
 
   // Panning handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -319,12 +333,35 @@ export function AcademicTimeline() {
     setIsPanning(false)
   }
 
+  // Find the current stage index
+  const currentStageIndex = mockAcademicHistory.findIndex(s => s.isCurrent)
+  const lastCompletedIndex = currentStageIndex >= 0 ? currentStageIndex : mockAcademicHistory.length - 1
+
   // Merge complete path with actual progress
-  const mergedHistory = completeAcademicPath.map(pathStage => {
+  // Mark all stages before current as completed
+  const mergedHistory = completeAcademicPath.map((pathStage, index) => {
     const completedStage = mockAcademicHistory.find(
       s => s.level === pathStage.level && s.grade === pathStage.grade
     )
-    return completedStage || pathStage
+    
+    // If we found actual data, use it
+    if (completedStage) {
+      return completedStage
+    }
+    
+    // If this stage comes before the current stage, mark it as completed
+    // (student must have passed through it to reach current stage)
+    if (index < lastCompletedIndex) {
+      return {
+        ...pathStage,
+        isCompleted: true,
+        schoolName: 'Completed',
+        year: 'Past'
+      }
+    }
+    
+    // Otherwise it's a future stage
+    return pathStage
   })
 
   // Group stages by level for flowchart layout
