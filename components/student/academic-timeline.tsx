@@ -351,10 +351,10 @@ export function AcademicTimeline() {
       </div>
 
       {/* Flowchart Container */}
-      <Card className="overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 relative">
+      <Card className="overflow-hidden bg-gradient-to-br from-gray-950 via-gray-900 to-black relative">
         <CardContent className="p-0">
           {/* Floating Zoom Controls */}
-          <div className="absolute top-4 right-4 z-30 flex flex-col gap-2 bg-gray-800/90 backdrop-blur-sm rounded-lg p-2 shadow-xl border border-gray-700">
+          <div className="absolute top-4 right-4 z-30 flex flex-col gap-2 bg-black/80 backdrop-blur-sm rounded-lg p-2 shadow-xl border border-gray-700">
             <Button 
               variant="ghost" 
               size="sm" 
@@ -391,7 +391,7 @@ export function AcademicTimeline() {
           </div>
 
           {/* Pan Hint */}
-          <div className="absolute bottom-4 left-4 z-30 bg-gray-800/90 backdrop-blur-sm rounded-lg px-3 py-2 shadow-xl border border-gray-700">
+          <div className="absolute bottom-4 left-4 z-30 bg-black/80 backdrop-blur-sm rounded-lg px-3 py-2 shadow-xl border border-gray-700">
             <div className="flex items-center gap-2 text-xs text-gray-300">
               <Move className="h-3 w-3" />
               <span>Drag to pan • Scroll to move • Ctrl+Scroll to zoom</span>
@@ -428,9 +428,9 @@ export function AcademicTimeline() {
                   return (
                     <div key={level} className="relative">
                       {/* Level Container */}
-                      <div className={`${levelColor.border} border-2 rounded-2xl p-6 bg-gray-800/50 dark:bg-gray-900/50 backdrop-blur-sm min-w-[280px]`}>
+                      <div className={`${levelColor.border} border-2 rounded-2xl p-6 bg-black/40 backdrop-blur-sm min-w-[280px]`}>
                         {/* Level Header */}
-                        <div className="mb-6 pb-3 border-b border-gray-700">
+                        <div className="mb-6 pb-3 border-b border-gray-800">
                           <h3 className="text-lg font-bold text-white flex items-center gap-2">
                             <div className={`w-3 h-3 rounded-full ${levelColor.bg}`}></div>
                             {level}
@@ -448,21 +448,25 @@ export function AcademicTimeline() {
                             return (
                               <motion.div
                                 key={stage.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ duration: 0.4, delay: (levelIndex * 0.2) + (stageIndex * 0.1) }}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ 
+                                  opacity: 1, 
+                                  scale: isInactive ? 0.85 : 1,
+                                  height: isInactive ? 'auto' : 'auto'
+                                }}
+                                transition={{ duration: 0.5, delay: (levelIndex * 0.2) + (stageIndex * 0.1) }}
                               >
                                 <motion.button
-                                  whileHover={{ scale: isInactive ? 1 : 1.05, y: isInactive ? 0 : -2 }}
-                                  whileTap={{ scale: isInactive ? 1 : 0.98 }}
+                                  whileHover={{ scale: isInactive ? 0.85 : 1.05, y: isInactive ? 0 : -2 }}
+                                  whileTap={{ scale: isInactive ? 0.85 : 0.98 }}
                                   onClick={() => !isInactive && setSelectedStage(stage)}
                                   disabled={isInactive}
-                                  className={`relative w-full border-2 rounded-lg p-4 transition-all duration-300 group text-left
+                                  className={`relative w-full border-2 rounded-lg transition-all duration-500 group text-left
                                     ${isInactive 
-                                      ? 'border-gray-600 bg-gradient-to-br from-gray-800 to-gray-900 opacity-40 cursor-not-allowed' 
+                                      ? 'border-gray-700 bg-gradient-to-br from-gray-900 to-black opacity-30 cursor-not-allowed p-3' 
                                       : isCurrent
-                                        ? `${color.border} bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900 hover:shadow-xl animate-pulse`
-                                        : `${color.border} bg-gradient-to-br from-gray-700 to-gray-800 dark:from-gray-800 dark:to-gray-900 hover:shadow-xl`
+                                        ? `${color.border} bg-gradient-to-br from-gray-800 to-gray-900 hover:shadow-2xl animate-pulse p-4`
+                                        : `${color.border} bg-gradient-to-br from-gray-800 to-gray-900 hover:shadow-2xl p-4`
                                     }`}
                                 >
                                   {/* Transfer Badge */}
@@ -479,32 +483,50 @@ export function AcademicTimeline() {
                                     </div>
                                   )}
 
-                                  <div className="space-y-2">
-                                    {/* Grade */}
-                                    <div className="flex items-center justify-between">
-                                      <h4 className={`font-bold text-sm ${isInactive ? 'text-gray-500' : 'text-white'}`}>
-                                        {stage.grade}
-                                      </h4>
-                                      <div className={`w-2 h-2 rounded-full ${isInactive ? 'bg-gray-600' : color.bg}`}></div>
+                                  {isInactive ? (
+                                    // Minimal view for inactive stages
+                                    <div className="flex items-center justify-center py-1">
+                                      <div className="text-center">
+                                        <h4 className="font-bold text-xs text-gray-600">
+                                          {stage.grade}
+                                        </h4>
+                                        <div className="w-2 h-2 rounded-full bg-gray-700 mx-auto mt-1"></div>
+                                      </div>
                                     </div>
+                                  ) : (
+                                    // Full view for completed/current stages
+                                    <motion.div 
+                                      className="space-y-2"
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      transition={{ duration: 0.3 }}
+                                    >
+                                      {/* Grade */}
+                                      <div className="flex items-center justify-between">
+                                        <h4 className="font-bold text-sm text-white">
+                                          {stage.grade}
+                                        </h4>
+                                        <div className={`w-2 h-2 rounded-full ${color.bg}`}></div>
+                                      </div>
 
-                                    {/* School Name */}
-                                    <p className={`text-xs truncate ${isInactive ? 'text-gray-600' : 'text-gray-300'}`}>
-                                      {isInactive ? 'Not Started' : stage.schoolName}
-                                    </p>
+                                      {/* School Name */}
+                                      <p className="text-xs text-gray-300 truncate">
+                                        {stage.schoolName}
+                                      </p>
 
-                                    {/* Year and Score */}
-                                    <div className="flex items-center justify-between pt-2 border-t border-gray-600">
-                                      <span className={`text-[10px] ${isInactive ? 'text-gray-600' : 'text-gray-400'}`}>
-                                        {isInactive ? 'TBD' : stage.year}
-                                      </span>
-                                      {stage.averageScore && !isInactive && (
-                                        <span className={`text-xs font-bold ${color.text}`}>
-                                          {stage.averageScore}%
+                                      {/* Year and Score */}
+                                      <div className="flex items-center justify-between pt-2 border-t border-gray-700">
+                                        <span className="text-[10px] text-gray-400">
+                                          {stage.year}
                                         </span>
-                                      )}
-                                    </div>
-                                  </div>
+                                        {stage.averageScore && (
+                                          <span className={`text-xs font-bold ${color.text}`}>
+                                            {stage.averageScore}%
+                                          </span>
+                                        )}
+                                      </div>
+                                    </motion.div>
+                                  )}
 
                                   {/* Hover Glow */}
                                   {!isInactive && (
