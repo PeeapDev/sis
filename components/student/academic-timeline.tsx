@@ -4,15 +4,22 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2, Move } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2, Move, ExternalLink, School } from 'lucide-react'
+import Link from 'next/link'
 
 type StageType = 'start' | 'continuation' | 'transfer' | 'jss' | 'sss'
+
+type SchoolGrade = 'A' | 'B' | 'C' | 'D'
 
 interface AcademicStage {
   id: string
   level: string
   grade: string
   schoolName: string
+  schoolId?: string // ID to link to school details page
+  schoolGrade?: SchoolGrade // A, B, C, or D grade school
+  schoolLogo?: string // School badge/logo URL
   type: StageType
   year: string
   term: string
@@ -24,6 +31,13 @@ interface AcademicStage {
   transferReason?: string
   isCompleted: boolean // Track if stage is achieved
   isCurrent?: boolean // Track current stage
+}
+
+const schoolGradeColors: Record<SchoolGrade, { bg: string; text: string; border: string }> = {
+  A: { bg: 'bg-emerald-500', text: 'text-emerald-500', border: 'border-emerald-500' },
+  B: { bg: 'bg-blue-500', text: 'text-blue-500', border: 'border-blue-500' },
+  C: { bg: 'bg-yellow-500', text: 'text-yellow-500', border: 'border-yellow-500' },
+  D: { bg: 'bg-orange-500', text: 'text-orange-500', border: 'border-orange-500' }
 }
 
 const stageColors: Record<StageType, { bg: string; border: string; text: string; label: string }> = {
@@ -93,6 +107,8 @@ const mockAcademicHistory: AcademicStage[] = [
     level: 'Primary',
     grade: 'Primary 1',
     schoolName: 'Freetown Primary School',
+    schoolId: 'fps-001',
+    schoolGrade: 'A',
     type: 'start',
     year: '2015',
     term: 'Term 1-3',
@@ -159,6 +175,8 @@ const mockAcademicHistory: AcademicStage[] = [
     level: 'Primary',
     grade: 'Primary 6',
     schoolName: 'Freetown Primary School',
+    schoolId: 'fps-001',
+    schoolGrade: 'A',
     type: 'start',
     year: '2020',
     term: 'Term 1-3',
@@ -177,6 +195,8 @@ const mockAcademicHistory: AcademicStage[] = [
     level: 'JSS',
     grade: 'JSS 1',
     schoolName: 'Bo Government Secondary School',
+    schoolId: 'bgss-002',
+    schoolGrade: 'B',
     type: 'jss',
     year: '2021',
     term: 'Term 1-3',
@@ -189,6 +209,8 @@ const mockAcademicHistory: AcademicStage[] = [
     level: 'JSS',
     grade: 'JSS 2',
     schoolName: 'Makeni Secondary School',
+    schoolId: 'mss-003',
+    schoolGrade: 'A',
     type: 'transfer',
     year: '2022',
     term: 'Term 1-3',
@@ -221,6 +243,8 @@ const mockAcademicHistory: AcademicStage[] = [
     level: 'SSS',
     grade: 'SSS 1',
     schoolName: 'Kenema High School',
+    schoolId: 'khs-004',
+    schoolGrade: 'B',
     type: 'sss',
     year: '2024',
     term: 'Term 1-3',
@@ -245,6 +269,8 @@ const mockAcademicHistory: AcademicStage[] = [
     level: 'SSS',
     grade: 'SSS 3',
     schoolName: 'Freetown International School',
+    schoolId: 'fis-005',
+    schoolGrade: 'A',
     type: 'transfer',
     year: '2026',
     term: 'Term 1 (Current)',
@@ -474,16 +500,26 @@ export function AcademicTimeline() {
                 {levels.map((level, levelIndex) => {
                   const stages = groupedStages[level]
                   const levelColor = stageColors[stages[0].type]
+                  const hasCurrentStage = stages.some(s => s.isCurrent)
                   
                   return (
                     <div key={level} className="relative">
-                      {/* Level Container */}
-                      <div className={`${levelColor.border} border-2 rounded-2xl p-6 bg-black/40 backdrop-blur-sm min-w-[280px]`}>
+                      {/* Level Container with distinct blinking for current level */}
+                      <div className={`${levelColor.border} border-2 rounded-2xl p-6 bg-black/40 backdrop-blur-sm min-w-[280px] ${
+                        hasCurrentStage ? 'animate-[pulse_2s_ease-in-out_infinite] shadow-2xl shadow-cyan-500/50' : ''
+                      }`}>
                         {/* Level Header */}
                         <div className="mb-6 pb-3 border-b border-gray-800">
-                          <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${levelColor.bg}`}></div>
+                          <h3 className={`text-lg font-bold flex items-center gap-2 ${
+                            hasCurrentStage ? 'text-cyan-400' : 'text-white'
+                          }`}>
+                            <div className={`w-3 h-3 rounded-full ${hasCurrentStage ? 'bg-cyan-400 animate-ping' : levelColor.bg}`}></div>
                             {level}
+                            {hasCurrentStage && (
+                              <Badge className="ml-2 bg-cyan-500 text-white text-[10px] animate-pulse">
+                                ACTIVE
+                              </Badge>
+                            )}
                           </h3>
                         </div>
 
@@ -559,10 +595,32 @@ export function AcademicTimeline() {
                                         <div className={`w-2 h-2 rounded-full ${color.bg}`}></div>
                                       </div>
 
-                                      {/* School Name */}
-                                      <p className="text-xs text-gray-300 truncate">
-                                        {stage.schoolName}
-                                      </p>
+                                      {/* School Name with Link and Grade Badge */}
+                                      <div className="flex items-center gap-2">
+                                        {stage.schoolId ? (
+                                          <Link 
+                                            href={`/schools/${stage.schoolId}`}
+                                            className="flex items-center gap-1 text-xs text-gray-300 hover:text-cyan-400 transition-colors group flex-1 truncate"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <School className="h-3 w-3 flex-shrink-0" />
+                                            <span className="truncate">{stage.schoolName}</span>
+                                            <ExternalLink className="h-2.5 w-2.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                                          </Link>
+                                        ) : (
+                                          <div className="flex items-center gap-1 text-xs text-gray-300 flex-1 truncate">
+                                            <School className="h-3 w-3 flex-shrink-0" />
+                                            <span className="truncate">{stage.schoolName}</span>
+                                          </div>
+                                        )}
+                                        {stage.schoolGrade && (
+                                          <Badge 
+                                            className={`${schoolGradeColors[stage.schoolGrade].bg} text-white text-[9px] px-1.5 py-0 h-4 flex-shrink-0`}
+                                          >
+                                            Grade {stage.schoolGrade}
+                                          </Badge>
+                                        )}
+                                      </div>
 
                                       {/* Year and Score */}
                                       <div className="flex items-center justify-between pt-2 border-t border-gray-700">
@@ -705,12 +763,29 @@ export function AcademicTimeline() {
                 {/* School Info */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-5 w-5 text-gray-600" />
-                    <div>
+                    <School className="h-5 w-5 text-gray-600" />
+                    <div className="flex-1">
                       <p className="text-sm text-gray-600 dark:text-gray-400">School</p>
-                      <p className="font-semibold text-gray-900 dark:text-white">
-                        {selectedStage.schoolName}
-                      </p>
+                      <div className="flex items-center gap-2">
+                        {selectedStage.schoolId ? (
+                          <Link 
+                            href={`/schools/${selectedStage.schoolId}`}
+                            className="font-semibold text-gray-900 dark:text-white hover:text-cyan-500 transition-colors flex items-center gap-1"
+                          >
+                            {selectedStage.schoolName}
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Link>
+                        ) : (
+                          <p className="font-semibold text-gray-900 dark:text-white">
+                            {selectedStage.schoolName}
+                          </p>
+                        )}
+                        {selectedStage.schoolGrade && (
+                          <Badge className={`${schoolGradeColors[selectedStage.schoolGrade].bg} text-white text-xs`}>
+                            Grade {selectedStage.schoolGrade} School
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
 
