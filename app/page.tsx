@@ -183,8 +183,54 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="container mx-auto px-4 py-8 text-center text-white/60 border-t border-white/10">
-        <p>&copy; 2024 Sierra Leone School Information System. Built for educational excellence.</p>
+      <footer className="container mx-auto px-4 py-12 border-t border-white/10">
+        <div className="grid md:grid-cols-3 gap-8 mb-8">
+          {/* About Section */}
+          <div>
+            <h3 className="text-white font-bold text-lg mb-4">About SIS</h3>
+            <p className="text-white/60 text-sm">
+              Sierra Leone School Information System - A comprehensive platform for educational excellence.
+            </p>
+          </div>
+
+          {/* Quick Links */}
+          <div>
+            <h3 className="text-white font-bold text-lg mb-4">Quick Links</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/auth/login" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Login
+                </Link>
+              </li>
+              <li>
+                <Link href="/explore" className="text-white/60 hover:text-white text-sm transition-colors">
+                  Explore Data
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Verify Result Section */}
+          <div>
+            <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+              <Shield className="h-5 w-5 text-sierra-gold" />
+              Verify Result
+            </h3>
+            <p className="text-white/60 text-sm mb-4">
+              Have a PIN? Verify academic history instantly.
+            </p>
+            <Link href="/result-checker">
+              <Button className="w-full bg-sierra-gold text-sierra-blue hover:bg-sierra-gold/90">
+                <Search className="mr-2 h-4 w-4" />
+                Check Result
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        <div className="text-center text-white/60 text-sm pt-8 border-t border-white/10">
+          <p>&copy; 2024 Sierra Leone School Information System. Built for educational excellence.</p>
+        </div>
       </footer>
     </div>
   )

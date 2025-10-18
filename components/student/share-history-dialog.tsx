@@ -8,8 +8,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Share2, Copy, Check, Clock, Lock, Unlock } from 'lucide-react'
+import { Share2, Copy, Check, Clock, Lock, Unlock, AlertTriangle, Shield } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface ShareHistoryDialogProps {
   open: boolean
@@ -83,10 +84,18 @@ export function ShareHistoryDialog({ open, onOpenChange, academicHistory }: Shar
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Privacy Warning */}
+          <Alert className="border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20">
+            <AlertTriangle className="h-4 w-4 text-yellow-600" />
+            <AlertDescription className="text-yellow-800 dark:text-yellow-200">
+              <strong className="font-semibold">Privacy Notice:</strong> Anyone with the generated PIN will be able to view the selected academic information. Only share this PIN with trusted individuals. The PIN will expire after the set duration.
+            </AlertDescription>
+          </Alert>
+
           {/* Select Stages to Share */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label>Select Stages to Share</Label>
+              <Label className="text-base font-semibold">Select Stages to Share</Label>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" onClick={selectAll}>
                   Select All
@@ -97,37 +106,59 @@ export function ShareHistoryDialog({ open, onOpenChange, academicHistory }: Shar
               </div>
             </div>
             
-            <div className="border rounded-lg p-4 max-h-60 overflow-y-auto space-y-2">
-              {academicHistory.filter(s => s.isCompleted || s.isCurrent).map((stage) => (
-                <div 
-                  key={stage.id} 
-                  className="flex items-center space-x-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded"
-                >
-                  <Checkbox
-                    id={stage.id}
-                    checked={selectedStages.includes(stage.id)}
-                    onCheckedChange={() => toggleStage(stage.id)}
-                  />
-                  <label
-                    htmlFor={stage.id}
-                    className="flex-1 flex items-center justify-between cursor-pointer"
+            {/* Grid Layout for Stages */}
+            <div className="border rounded-lg p-4 max-h-80 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                {academicHistory.filter(s => s.isCompleted || s.isCurrent).map((stage) => (
+                  <div 
+                    key={stage.id} 
+                    className={`relative border-2 rounded-lg p-3 transition-all cursor-pointer ${
+                      selectedStages.includes(stage.id)
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                    onClick={() => toggleStage(stage.id)}
                   >
-                    <div>
-                      <p className="font-medium text-sm">{stage.grade}</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
-                        {stage.schoolName} • {stage.year}
-                      </p>
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        id={stage.id}
+                        checked={selectedStages.includes(stage.id)}
+                        onCheckedChange={() => toggleStage(stage.id)}
+                        className="mt-1"
+                      />
+                      <label
+                        htmlFor={stage.id}
+                        className="flex-1 cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-semibold text-sm">{stage.grade}</p>
+                          {stage.isCurrent && (
+                            <Badge className="bg-blue-500 text-white text-[9px] h-4">CURRENT</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                          {stage.schoolName}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
+                          {stage.year}
+                        </p>
+                      </label>
                     </div>
-                    {stage.isCurrent && (
-                      <Badge className="bg-blue-500 text-white text-[10px]">CURRENT</Badge>
-                    )}
-                  </label>
-                </div>
-              ))}
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              {selectedStages.length} stage(s) selected
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                <strong>{selectedStages.length}</strong> of {academicHistory.filter(s => s.isCompleted || s.isCurrent).length} stage(s) selected
+              </p>
+              {selectedStages.length > 0 && (
+                <Badge variant="outline" className="text-green-600 border-green-600">
+                  <Shield className="h-3 w-3 mr-1" />
+                  Ready to share
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Set Expiry Days */}
