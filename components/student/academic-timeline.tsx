@@ -5,8 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2, Move, ExternalLink, School } from 'lucide-react'
+import { X, Award, Calendar, MapPin, BookOpen, TrendingUp, Users, ZoomIn, ZoomOut, Maximize2, Move, ExternalLink, School, Share2 } from 'lucide-react'
 import Link from 'next/link'
+import { ShareHistoryDialog } from './share-history-dialog'
 
 type StageType = 'start' | 'continuation' | 'transfer' | 'jss' | 'sss'
 
@@ -285,6 +286,7 @@ const mockAcademicHistory: AcademicStage[] = [
 
 export function AcademicTimeline() {
   const [selectedStage, setSelectedStage] = useState<AcademicStage | null>(null)
+  const [shareDialogOpen, setShareDialogOpen] = useState(false)
   const [zoom, setZoom] = useState(0.8)
   const [isPanning, setIsPanning] = useState(false)
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
@@ -415,14 +417,23 @@ export function AcademicTimeline() {
 
   return (
     <div className="space-y-6">
-      {/* Legend */}
-      <div className="flex flex-wrap items-center gap-4">
-        {Object.entries(stageColors).map(([key, value]) => (
-          <div key={key} className="flex items-center gap-2">
-            <div className={`w-3 h-3 rounded ${value.bg}`}></div>
-            <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{value.label}</span>
-          </div>
-        ))}
+      {/* Share Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center gap-4">
+          {Object.entries(stageColors).map(([key, value]) => (
+            <div key={key} className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded ${value.bg}`}></div>
+              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{value.label}</span>
+            </div>
+          ))}
+        </div>
+        <Button 
+          onClick={() => setShareDialogOpen(true)}
+          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+        >
+          <Share2 className="h-4 w-4 mr-2" />
+          Share History
+        </Button>
       </div>
 
       {/* Flowchart Container */}
@@ -876,6 +887,13 @@ export function AcademicTimeline() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Share History Dialog */}
+      <ShareHistoryDialog 
+        open={shareDialogOpen}
+        onOpenChange={setShareDialogOpen}
+        academicHistory={mockAcademicHistory}
+      />
     </div>
   )
 }
