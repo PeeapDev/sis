@@ -1,19 +1,18 @@
 export type BlockchainConfigStatus = {
   providerConfigured: boolean
   accountConfigured: boolean
-  contractConfigured: boolean
+  networkConfigured: boolean
   missing: string[]
 }
 
 export function getBlockchainConfigStatus(): BlockchainConfigStatus {
   const missing: string[] = []
-  const providerConfigured = Boolean(process.env.WEB3_PROVIDER_URL)
-  const accountConfigured = Boolean(process.env.BLOCKCHAIN_PRIVATE_KEY)
-  const contractConfigured = Boolean(process.env.SMART_CONTRACT_ADDRESS)
+  const providerConfigured = Boolean(process.env.SOLANA_RPC_URL || process.env.SOLANA_NETWORK)
+  const accountConfigured = Boolean(process.env.SOLANA_PRIVATE_KEY)
+  const networkConfigured = Boolean(process.env.SOLANA_NETWORK)
 
-  if (!providerConfigured) missing.push('WEB3_PROVIDER_URL')
-  if (!accountConfigured) missing.push('BLOCKCHAIN_PRIVATE_KEY')
-  if (!contractConfigured) missing.push('SMART_CONTRACT_ADDRESS')
+  if (!providerConfigured) missing.push('SOLANA_RPC_URL or SOLANA_NETWORK')
+  if (!accountConfigured) missing.push('SOLANA_PRIVATE_KEY')
 
-  return { providerConfigured, accountConfigured, contractConfigured, missing }
+  return { providerConfigured, accountConfigured, networkConfigured, missing }
 }

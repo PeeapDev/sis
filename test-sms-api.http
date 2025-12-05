@@ -1,0 +1,74 @@
+###
+# SMS API Testing for SIS Integration
+# Make sure to update the API_KEY after you set it in SMS .env
+###
+
+@baseUrl = https://gov.school.edu.sl/api/sis
+@apiKey = sis_secret_key_change_this_to_something_secure_12345
+
+### 1a. Test Authentication - Login with Email
+POST {{baseUrl}}/auth/check
+X-SIS-API-KEY: {{apiKey}}
+Content-Type: application/json
+
+{
+  "login": "sandra.ottewilliams@gmail.com",
+  "password": "123456"
+}
+
+### 1b. Test Authentication - Login with Phone Number
+POST {{baseUrl}}/auth/check
+X-SIS-API-KEY: {{apiKey}}
+Content-Type: application/json
+
+{
+  "login": "077601707",
+  "password": "123456"
+}
+
+### 1c. Test Authentication - Login with Username
+POST {{baseUrl}}/auth/check
+X-SIS-API-KEY: {{apiKey}}
+Content-Type: application/json
+
+{
+  "login": "student123",
+  "password": "password123"
+}
+
+### 2. Get Country Dashboard Summary
+GET {{baseUrl}}/dashboard/summary
+X-SIS-API-KEY: {{apiKey}}
+
+### 3. Get Regional Breakdown
+GET {{baseUrl}}/dashboard/regions
+X-SIS-API-KEY: {{apiKey}}
+
+### 4. Get Student Profile by ID
+# Replace '123' with actual student ID
+GET {{baseUrl}}/students/123
+X-SIS-API-KEY: {{apiKey}}
+
+### 5. Get Student Profile by Admission Number
+# Replace 'STD12345' with actual admission number
+GET {{baseUrl}}/students/STD12345
+X-SIS-API-KEY: {{apiKey}}
+
+### 6. Get Student History (Enrollments & Transfers)
+GET {{baseUrl}}/students/123/history
+X-SIS-API-KEY: {{apiKey}}
+
+### 7. Get Student Results
+GET {{baseUrl}}/students/123/results
+X-SIS-API-KEY: {{apiKey}}
+
+###
+# Test with Invalid API Key (should return 401)
+###
+GET {{baseUrl}}/dashboard/summary
+X-SIS-API-KEY: wrong_key
+
+###
+# Test without API Key (should return 401)
+###
+GET {{baseUrl}}/dashboard/summary

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { blockchainService } from '@/lib/blockchain'
+import { solanaService } from '@/lib/solana'
 import { prisma } from '@/lib/prisma'
 import { getBlockchainConfigStatus } from '@/lib/env'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get blockchain connection status
-    const connectionStatus = await blockchainService.getConnectionStatus()
+    // Get Solana connection status
+    const connectionStatus = await solanaService.getConnectionStatus()
     const config = getBlockchainConfigStatus()
 
     // Fetch statistics from DB
@@ -21,19 +21,20 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         blockchain: {
+          type: 'solana',
           connected: connectionStatus.connected,
-          networkId: connectionStatus.networkId,
-          currentBlock: connectionStatus.blockNumber,
-          contractAddress: connectionStatus.contractAddress,
+          network: connectionStatus.network,
+          currentSlot: connectionStatus.slot,
+          walletAddress: connectionStatus.walletAddress,
+          balance: connectionStatus.balance,
           providerConfigured: config.providerConfigured,
           accountConfigured: config.accountConfigured,
-          contractConfigured: config.contractConfigured,
           missingConfig: config.missing
         },
         features: {
-          storeRecords: connectionStatus.connected && Boolean(process.env.SMART_CONTRACT_ADDRESS) && Boolean(process.env.BLOCKCHAIN_PRIVATE_KEY),
-          verifyRecords: Boolean(process.env.WEB3_PROVIDER_URL),
-          retrieveRecords: Boolean(process.env.WEB3_PROVIDER_URL),
+          storeRecords: connectionStatus.connected && Boolean(process.env.SOLANA_PRIVATE_KEY),
+          verifyRecords: connectionStatus.connected,
+          retrieveRecords: connectionStatus.connected,
           certificateGeneration: true,
           qrCodeVerification: true
         },
@@ -52,8 +53,8 @@ export async function GET(request: NextRequest) {
         }
       },
       message: connectionStatus.connected 
-        ? 'Blockchain service is operational' 
-        : 'Blockchain service is not available'
+        ? 'Solana blockchain service is operational' 
+        : 'Solana blockchain service is not available'
     }
 
     return NextResponse.json(response)
@@ -64,6 +65,7 @@ export async function GET(request: NextRequest) {
       success: false,
       data: {
         blockchain: {
+          type: 'solana',
           connected: false,
           error: error instanceof Error ? error.message : 'Unknown error'
         },
