@@ -21,9 +21,10 @@ model User {
   updatedAt DateTime @updatedAt
 
   // Relations
-  student      Student?
-  adminProfile AdminProfile?
-  schoolAdmins SchoolAdmin[]
+  student          Student?
+  adminProfile     AdminProfile?
+  schoolAdmins     SchoolAdmin[]
+  institutionUsers InstitutionUser[]
 
   @@map("users")
 }
@@ -247,6 +248,327 @@ model APILog {
   @@map("api_logs")
 }
 
+// ============================================
+// UNIVERSITY ACADEMIC RECORDS SYSTEM
+// ============================================
+
+// University Programs (Courses of Study)
+model Program {
+  id              String   @id @default(cuid())
+  institutionId   String
+  name            String   // e.g., "Bachelor of Science in Computer Science"
+  code            String   // e.g., "BSC-CS"
+  type            ProgramType
+  duration        Int      // Duration in years
+  totalCredits    Int      @default(120)
+  department      String?
+  faculty         String?
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  institution     Institution @relation(fields: [institutionId], references: [id])
+  courses         Course[]
+  enrollments     UniversityEnrollment[]
+
+  @@unique([institutionId, code])
+  @@map("programs")
+}
+
+// Courses/Modules within a Program
+model Course {
+  id              String   @id @default(cuid())
+  programId       String
+  code            String   // e.g., "CS101"
+  name            String   // e.g., "Introduction to Programming"
+  credits         Int      @default(3)
+  semester        Int      // 1-8 for 4-year program
+  year            Int      // 1-4
+  isCore          Boolean  @default(true) // Core or elective
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  program         Program  @relation(fields: [programId], references: [id])
+  results         CourseResult[]
+
+  @@unique([programId, code])
+  @@map("courses")
+}
+
+// Student Enrollment in University Program
+model UniversityEnrollment {
+  id              String   @id @default(cuid())
+  institutionId   String
+  programId       String
+  studentName     String
+  studentId       String   // University student ID (e.g., USL/2020/CS/001)
+  email           String?
+  phone           String?
+  dateOfBirth     DateTime?
+  nationalId      String?
+  enrollmentDate  DateTime @default(now())
+  expectedGraduation DateTime?
+  currentYear     Int      @default(1)
+  currentSemester Int      @default(1)
+  status          EnrollmentStatus @default(ACTIVE)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  program         Program  @relation(fields: [programId], references: [id])
+  results         CourseResult[]
+  graduationRequest GraduationRequest?
+
+  @@unique([institutionId, studentId])
+  @@map("university_enrollments")
+}
+
+// Course Results (Grades) - Added by Lecturers
+model CourseResult {
+  id              String   @id @default(cuid())
+  enrollmentId    String
+  courseId        String
+  academicYear    String   // e.g., "2023/2024"
+  semester        Int      // 1 or 2
+  score           Float?   // Raw score (0-100)
+  grade           String?  // Letter grade (A, B+, B, etc.)
+  gradePoint      Float?   // Grade point (4.0, 3.5, etc.)
+  credits         Int      // Credits for this course
+  status          ResultStatus @default(PENDING)
+  remarks         String?
+  addedById       String?  // Lecturer who added the result
+  approvedById    String?  // HOD/Dean who approved
+  approvedAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  enrollment      UniversityEnrollment @relation(fields: [enrollmentId], references: [id])
+  course          Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([enrollmentId, courseId, academicYear, semester])
+  @@map("course_results")
+}
+
+// Graduation Request - Student applies, Registrar processes
+model GraduationRequest {
+  id              String   @id @default(cuid())
+  enrollmentId    String   @unique
+  requestDate     DateTime @default(now())
+  totalCredits    Int
+  cgpa            Float
+  classOfDegree   String   // Calculated based on CGPA
+  status          GraduationStatus @default(PENDING)
+  reviewedById    String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  certificateId   String?  // Link to issued certificate
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  enrollment      UniversityEnrollment @relation(fields: [enrollmentId], references: [id])
+
+  @@map("graduation_requests")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  SUSPENDED
+  WITHDRAWN
+  GRADUATED
+  DEFERRED
+}
+
+enum ResultStatus {
+  PENDING      // Entered by lecturer, awaiting approval
+  APPROVED     // Approved by HOD/Dean
+  PUBLISHED    // Visible to student
+  DISPUTED     // Under review
+}
+
+enum GraduationStatus {
+  PENDING      // Awaiting review
+  APPROVED     // Approved for graduation
+  REJECTED     // Not eligible
+  CERTIFIED    // Certificate issued
+}
+
+// ============================================
+// Academic Credential Verification System
+// ============================================
+model Institution {
+  id              String   @id @default(cuid())
+  name            String
+  code            String   @unique // e.g., "USL", "NJALA", "LIMKOKWING"
+  type            InstitutionType
+  address         String
+  city            String
+  country         String   @default("Sierra Leone")
+  phone           String?
+  email           String?
+  website         String?
+  logo            String?
+  accreditationNo String?  // Government accreditation number
+  isVerified      Boolean  @default(false) // Verified by ministry
+  walletAddress   String?  // Solana wallet for signing certificates
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relations
+  certificates    Certificate[]
+  authorizedUsers InstitutionUser[]
+  programs        Program[]
+
+  @@map("institutions")
+}
+
+model InstitutionUser {
+  id            String   @id @default(cuid())
+  institutionId String
+  userId        String
+  role          InstitutionRole @default(REGISTRAR)
+  canIssue      Boolean  @default(false) // Can issue certificates
+  canRevoke     Boolean  @default(false) // Can revoke certificates
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  user          User        @relation(fields: [userId], references: [id])
+  issuedCerts   Certificate[] @relation("IssuedBy")
+
+  @@unique([institutionId, userId])
+  @@map("institution_users")
+}
+
+model Certificate {
+  id                String   @id @default(cuid())
+  certificateNo     String   @unique // Unique certificate number
+  verificationCode  String   @unique // Short code for verification (e.g., "ABC123XYZ")
+  
+  // Student Information
+  studentName       String
+  studentId         String?  // Student ID at institution
+  dateOfBirth       DateTime?
+  nationalId        String?  // National ID number
+  
+  // Certificate Details
+  programName       String   // e.g., "Bachelor of Science in Computer Science"
+  programType       ProgramType
+  classOfDegree     String?  // e.g., "First Class Honours", "Second Class Upper"
+  cgpa              Float?
+  graduationDate    DateTime
+  startDate         DateTime?
+  endDate           DateTime?
+  
+  // Institution
+  institutionId     String
+  issuedById        String?  // InstitutionUser who issued it
+  
+  // Blockchain
+  transactionHash   String?  @unique // Solana transaction signature
+  blockchainStatus  BlockchainStatus @default(PENDING)
+  onChainAddress    String?  // PDA address on Solana
+  dataHash          String?  // SHA256 hash of certificate data
+  
+  // Status
+  status            CertificateStatus @default(ACTIVE)
+  revokedAt         DateTime?
+  revokedReason     String?
+  revokedById       String?
+  
+  // Metadata
+  qrCodeUrl         String?
+  pdfUrl            String?
+  metadata          Json?    // Additional custom fields
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  institution       Institution     @relation(fields: [institutionId], references: [id])
+  issuedBy          InstitutionUser? @relation("IssuedBy", fields: [issuedById], references: [id])
+  verificationLogs  VerificationLog[]
+
+  @@index([studentName])
+  @@index([verificationCode])
+  @@index([transactionHash])
+  @@map("certificates")
+}
+
+model VerificationLog {
+  id            String   @id @default(cuid())
+  certificateId String
+  verifierIp    String?
+  verifierAgent String?
+  verifierOrg   String?  // Organization name if provided
+  method        VerificationMethod
+  result        VerificationResult
+  createdAt     DateTime @default(now())
+
+  // Relations
+  certificate   Certificate @relation(fields: [certificateId], references: [id])
+
+  @@map("verification_logs")
+}
+
+enum InstitutionType {
+  UNIVERSITY
+  POLYTECHNIC
+  COLLEGE
+  VOCATIONAL
+  PROFESSIONAL_BODY
+}
+
+enum InstitutionRole {
+  ADMIN
+  REGISTRAR
+  DEAN
+  VIEWER
+}
+
+enum ProgramType {
+  CERTIFICATE
+  DIPLOMA
+  ASSOCIATE_DEGREE
+  BACHELORS
+  MASTERS
+  DOCTORATE
+  PROFESSIONAL
+}
+
+enum CertificateStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+  SUSPENDED
+}
+
+enum BlockchainStatus {
+  PENDING
+  CONFIRMED
+  FAILED
+}
+
+enum VerificationMethod {
+  QR_CODE
+  VERIFICATION_CODE
+  CERTIFICATE_NO
+  API
+}
+
+enum VerificationResult {
+  VALID
+  INVALID
+  REVOKED
+  NOT_FOUND
+  ERROR
+}
+
 // Enums
 enum UserRole {
   STUDENT
@@ -255,6 +577,7 @@ enum UserRole {
   DISTRICT_ADMIN
   NATIONAL_ADMIN
   SUPER_ADMIN
+  INSTITUTION_ADMIN
 }
 
 enum SchoolType {

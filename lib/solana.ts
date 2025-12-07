@@ -26,6 +26,7 @@ export class SolanaService {
   private connection: Connection
   private payer?: Keypair
   private network: SolanaNetwork
+  private programId: PublicKey
 
   constructor() {
     // Get network from env or default to devnet
@@ -33,6 +34,10 @@ export class SolanaService {
     const rpcUrl = process.env.SOLANA_RPC_URL || NETWORKS[this.network]
     
     this.connection = new Connection(rpcUrl, 'confirmed')
+
+    // Initialize program ID from env
+    const programIdStr = process.env.SOLANA_PROGRAM_ID || 'CpWHMiZzwQqanVxQxx1DD4GvQzxovP9xtUSu8sz1dg6e'
+    this.programId = new PublicKey(programIdStr)
 
     // Initialize payer wallet from private key
     const privateKey = process.env.SOLANA_PRIVATE_KEY
@@ -60,51 +65,46 @@ export class SolanaService {
   }
 
   /**
-   * Store an educational record on Solana using a memo transaction
-   * This creates an immutable record on the blockchain
+   * Issue a certificate on-chain via the SIS Certificate Program
+   * This creates a structured certificate record on Solana
    */
-  async storeEducationRecord(data: {
+  async issueCertificate(data: {
+    certificateNo: string
     studentId: string
-    schoolId: string
-    recordType: 'RESULT' | 'ENROLLMENT' | 'CERTIFICATE' | 'TRANSCRIPT'
-    recordData: any
+    studentName: string
+    programName: string
+    graduationYear: number
+    classOfDegree: string
+    cgpa: number
   }): Promise<{
     success: boolean
     signature?: string
     slot?: number
-    dataHash?: string
     error?: string
   }> {
+    // Placeholder implementation until program is deployed
     try {
       if (!this.payer) {
         return { success: false, error: 'Solana wallet not configured. Set SOLANA_PRIVATE_KEY.' }
       }
 
-      // Create data hash
-      const dataHash = this.hashData(data.recordData)
-      const timestamp = Date.now()
-
-      // Create memo data (limited to ~500 bytes for efficiency)
+      // TODO: Implement actual program call using Anchor client
+      // For now, fall back to memo-based storage
       const memoData = JSON.stringify({
-        type: 'SL_SIS_RECORD',
-        studentId: data.studentId,
-        schoolId: data.schoolId,
-        recordType: data.recordType,
-        dataHash,
-        timestamp,
+        type: 'SL_SIS_CERTIFICATE',
+        ...data,
+        issuedBy: this.payer.publicKey.toString(),
+        issuedAt: Date.now(),
       })
 
-      // Create a simple transfer transaction with memo
-      // Using minimum transfer to self as a way to store data on-chain
       const transaction = new Transaction().add(
         SystemProgram.transfer({
           fromPubkey: this.payer.publicKey,
           toPubkey: this.payer.publicKey,
-          lamports: 0, // Zero transfer, just for the memo
+          lamports: 0,
         })
       )
 
-      // Add memo instruction (using the memo program)
       const MEMO_PROGRAM_ID = new PublicKey('MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr')
       transaction.add({
         keys: [{ pubkey: this.payer.publicKey, isSigner: true, isWritable: false }],
@@ -112,7 +112,6 @@ export class SolanaService {
         data: Buffer.from(memoData),
       })
 
-      // Send and confirm transaction
       const signature = await sendAndConfirmTransaction(
         this.connection,
         transaction,
@@ -120,7 +119,6 @@ export class SolanaService {
         { commitment: 'confirmed' }
       )
 
-      // Get transaction details for slot number
       const txDetails = await this.connection.getTransaction(signature, {
         commitment: 'confirmed',
         maxSupportedTransactionVersion: 0,
@@ -130,10 +128,9 @@ export class SolanaService {
         success: true,
         signature,
         slot: txDetails?.slot,
-        dataHash,
       }
     } catch (error) {
-      console.error('Solana storage error:', error)
+      console.error('Certificate issuance error:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown Solana error',

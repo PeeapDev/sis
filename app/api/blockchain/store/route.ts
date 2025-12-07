@@ -1,75 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { solanaService, solanaUtils } from '@/lib/solana'
+import { SolanaService } from '@/lib/solana'
 import { prisma } from '@/lib/prisma'
+
+const solanaService = new SolanaService()
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
-    // Validate required fields
-    const requiredFields = ['studentId', 'schoolId', 'recordType', 'recordData']
-    for (const field of requiredFields) {
-      if (!body[field]) {
-        return NextResponse.json(
-          { success: false, error: `Missing required field: ${field}` },
-          { status: 400 }
-        )
-      }
-    }
+    const { 
+      certificateNo, 
+      studentId, 
+      studentName, 
+      programName, 
+      graduationYear, 
+      classOfDegree, 
+      cgpa 
+    } = body
 
-    // Validate record type
-    const validRecordTypes = ['RESULT', 'ENROLLMENT', 'CERTIFICATE', 'TRANSCRIPT']
-    if (!validRecordTypes.includes(body.recordType)) {
+    // Validate required fields for certificate issuance
+    if (!certificateNo || !studentId || !studentName || !programName || !graduationYear || !classOfDegree || cgpa === undefined) {
       return NextResponse.json(
-        { success: false, error: 'Invalid record type' },
+        { error: 'Missing required fields for certificate issuance' },
         { status: 400 }
       )
     }
 
-    // Store record on Solana blockchain
-    const result = await solanaService.storeEducationRecord({
-      studentId: body.studentId,
-      schoolId: body.schoolId,
-      recordType: body.recordType,
-      recordData: body.recordData
+    // Issue certificate on Solana
+    const result = await solanaService.issueCertificate({
+      certificateNo,
+      studentId,
+      studentName,
+      programName,
+      graduationYear,
+      classOfDegree,
+      cgpa,
     })
 
     if (!result.success) {
       return NextResponse.json(
-        { success: false, error: result.error },
+        { error: result.error || 'Failed to issue certificate on Solana' },
         { status: 500 }
       )
     }
 
-    // Persist blockchain reference in database
-    const network = process.env.SOLANA_NETWORK || 'devnet'
+    // Save certificate record to database
     const blockchainRecord = await prisma.blockchainRecord.create({
       data: {
-        schoolId: body.schoolId,
-        studentId: body.studentId,
-        recordType: body.recordType,
-        dataHash: result.dataHash as string,
-        transactionHash: result.signature as string,
-        blockNumber: Number(result.slot),
-        contractAddress: `solana:${network}` // Store network info instead of contract address
-      }
+        studentId,
+        schoolId: 'SIS_DEFAULT', // TODO: get from context
+        recordType: 'CERTIFICATE',
+        dataHash: certificateNo, // TODO: compute proper hash
+        transactionHash: result.signature!,
+        blockNumber: result.slot || 0,
+        contractAddress: process.env.SOLANA_PROGRAM_ID || 'Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcfkg486z765hjV',
+      },
     })
 
     return NextResponse.json({
       success: true,
-      data: {
-        blockchainRecord,
-        signature: result.signature,
-        slot: result.slot,
-        explorerUrl: solanaUtils.getExplorerUrl(result.signature as string, network as any)
-      },
-      message: 'Record successfully stored on Solana blockchain'
-    }, { status: 201 })
+      message: 'Certificate issued successfully on Solana',
+      record: blockchainRecord,
+      explorerUrl: `https://explorer.solana.com/tx/${result.signature}?cluster=devnet`,
+    })
 
   } catch (error) {
-    console.error('Blockchain storage API error:', error)
+    console.error('Issue certificate error:', error)
     return NextResponse.json(
-      { success: false, error: 'Failed to store record on Solana blockchain' },
+      { error: 'Internal server error' },
       { status: 500 }
     )
   }
