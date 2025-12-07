@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Search, Eye, XCircle, CheckCircle, Clock, AlertCircle, QrCode, Building2, ExternalLink, Download } from 'lucide-react'
+import { Plus, Search, Eye, XCircle, CheckCircle, Clock, AlertCircle, QrCode, Building2, ExternalLink, Download, FileText } from 'lucide-react'
 
 interface Certificate {
   id: string
@@ -344,6 +344,13 @@ export default function AdminCertificatesPage() {
                         title="Verify"
                       >
                         <QrCode className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => window.open(`/certificate/${cert.id}`, '_blank')}
+                        className="p-2 text-gray-400 hover:text-purple-400 hover:bg-purple-900/30 rounded-lg transition-colors"
+                        title="Download PDF"
+                      >
+                        <FileText className="w-4 h-4" />
                       </button>
                       {cert.status === 'ACTIVE' && (
                         <button
